@@ -721,6 +721,35 @@ function parseDuree(v){
   const n=num(m[1]); const u=m[2]||'min';
   return u==='h'? n*3600 : u==='s'? n : n*60;
 }
+/* Plage tolérante : « 7..9 bar », « de 0..13 cm », « 0 à 13 cm », « entre 7 et 9 bar », « 7-9 bar »,
+   « 28 ±1 cm », « ≥ 45 ° », « 45° mini », « < 13 cm », « 13 cm max », « 48 cm » (valeur cible) */
+function parsePlage(v){
+  const N='(-?\\d+(?:[.,]\\d+)?)';
+  let t=String(v).trim().replace(/^(?:de|entre|from|between)\s+/i,'');
+  let m;
+  if((m=t.match(new RegExp('^'+N+'\\s*(?:\\.\\.\\.?|à|a|et|-|–|—|to|/)\\s*'+N+'\\s*(.*)$','i'))))
+    return {min:num(m[1]), max:num(m[2]), unit:m[3].trim()};
+  if((m=t.match(new RegExp('^'+N+'\\s*(?:±|\\+/-|\\+-)\\s*'+N+'\\s*(.*)$'))))
+    return {min:num(m[1])-num(m[2]), max:num(m[1])+num(m[2]), unit:m[3].trim()};
+  if((m=t.match(new RegExp('^(?:<=?|≤|max(?:i(?:mum)?)?\\.?|inf[ée]rieur(?:e)?\\s+(?:ou\\s+[ée]gal(?:e)?\\s+)?[àa]|jusqu.[àa])\\s*'+N+'\\s*(.*)$','i'))))
+    return {min:-Infinity, max:num(m[1]), unit:m[2].trim()};
+  if((m=t.match(new RegExp('^(?:>=?|≥|min(?:i(?:mum)?)?\\.?|sup[ée]rieur(?:e)?\\s+(?:ou\\s+[ée]gal(?:e)?\\s+)?[àa]|au\\s+moins)\\s*'+N+'\\s*(.*)$','i'))))
+    return {min:num(m[1]), max:Infinity, unit:m[2].trim()};
+  if((m=t.match(new RegExp('^'+N+'\\s*(.*?)\\s*(mini?|minimum|maxi?|maximum)\\.?$','i')))){
+    const isMin=/^min/i.test(m[3]);
+    return isMin? {min:num(m[1]), max:Infinity, unit:m[2].trim()} : {min:-Infinity, max:num(m[1]), unit:m[2].trim()};
+  }
+  if((m=t.match(new RegExp('^'+N+'\\s*([^\\d]*)$'))))
+    return {min:num(m[1]), max:num(m[1]), unit:m[2].trim()};
+  return null;
+}
+function plageTxt(pl){
+  const u=pl.unit? ' '+pl.unit : '';
+  if(pl.min===-Infinity) return `≤ ${pl.max}${u}`;
+  if(pl.max===Infinity) return `≥ ${pl.min}${u}`;
+  if(pl.min===pl.max) return `${pl.min}${u}`;
+  return `${pl.min} à ${pl.max}${u}`;
+}
 function parseMD(text){
   const warnings=[], meta={}, phases=[];
   let src = String(text||'').replace(/\r\n?/g,'\n');
@@ -760,9 +789,9 @@ function parseMD(text){
           if(st){ if(t){ st.type=t; st.typeSet=true; } else warnings.push({line:ln,msg:`Type inconnu « ${v} »`}); }
           break; }
         case 'plage': {
-          const p=v.match(/^(-?[\d.,]+)\s*\.\.\s*(-?[\d.,]+)\s*(.*)$/);
-          if(p && st){ st.plage={min:num(p[1]), max:num(p[2]), unit:p[3].trim()}; }
-          else warnings.push({line:ln,msg:`Plage illisible « ${v} » (format : min..max unité)`});
+          const pl=parsePlage(v);
+          if(pl && st){ st.plage=pl; }
+          else warnings.push({line:ln,msg:`Plage illisible « ${v} » (ex. : 7..9 bar, de 0 à 13 cm, 28 ±1 cm, ≥ 45 °, 13 cm max)`});
           break; }
         case 'duree': { const d=parseDuree(v); if(d===null) warnings.push({line:ln,msg:`Durée illisible « ${v} »`}); tgt.duree=d; tgt.dureeTxt=v; break; }
         case 'si non': tgt.siNon=v; break;
@@ -1010,7 +1039,7 @@ function stepBody(f, ro){
     ${s.images.map(im=>`<figure><img src="${esc(im.src)}" alt="${esc(im.alt)}" loading="lazy" data-zoom>${im.alt?`<figcaption>${esc(im.alt)}</figcaption>`:''}</figure>`).join('')}
     ${s.notes.map(n=>`<div class="note warn">${inl(n)}</div>`).join('')}`;
   if(s.type==='valeur' && s.plage){
-    const pl=s.plage, tgt = pl.min===pl.max? `Cible : <b>${pl.min} ${esc(pl.unit)}</b>` : `Plage : <b>${pl.min} à ${pl.max} ${esc(pl.unit)}</b>`;
+    const pl=s.plage, tgt = `${pl.min===pl.max?'Cible':'Plage'} : <b>${esc(plageTxt(pl))}</b>`;
     h+=`<div class="target">${tgt}</div>`;
   }
   if(s.type==='minuterie') h+=`<div class="target">Durée : <b>${esc(s.dureeTxt||fmtDur(s.duree||0))}</b>${s.repeat?' – alerte périodique':''}</div>`;
@@ -1274,7 +1303,7 @@ document.addEventListener('click', async e=>{
     case 'val': {
       const v=num(u.val); if(v===null){ toast('Saisir une valeur numérique'); return; }
       const pl=s.plage; if(!pl || (v>=pl.min && v<=pl.max)){ record(f,'ok',String(v),com); nextStep(); return; }
-      u.problem = `Valeur ${v} ${pl.unit} hors plage (${pl.min}–${pl.max} ${pl.unit}). ${s.siHors||''}`; u.forceMode=true; u.needComment=true; u.kind='val'; u.forcedVal=String(v);
+      u.problem = `Valeur ${v} ${pl.unit} hors plage (${plageTxt(pl)}). ${s.siHors||''}`; u.forceMode=true; u.needComment=true; u.kind='val'; u.forcedVal=String(v);
       logEvt(f,'non conforme',s.title,String(v),'hors plage'); save(); render(); return; }
     case 'chk': record(f,'ok',`${u.checks.length}/${u.checks.length}`,com); CUR.results[f.key].checks=u.checks; save(); nextStep(); return;
     case 'chkpart': { const n=u.checks.filter(Boolean).length; u.problem=`Checklist incomplète : ${n}/${u.checks.length} élément(s) coché(s).`; u.forceMode=true; u.needComment=true; u.kind='chk'; render(); return; }
