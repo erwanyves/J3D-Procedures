@@ -13,7 +13,7 @@
   --bg:#f3f4f2; --card:#ffffff; --fg:#1b2127; --muted:#5d6872; --line:#d9ddd8;
   --accent:#d9650b; --accent-fg:#ffffff;
   --ok:#1f8a4c; --ok-bg:#e3f4ea; --warn:#a86400; --warn-bg:#fff1d6; --bad:#c0262d; --bad-bg:#fde4e4;
-  --info-bg:#e9eef3; --top:#1f2a33; --top-fg:#f3f4f2;
+  --info-bg:#e9eef3; --top:#1f2a33; --top-fg:#f3f4f2; --mine:#2f6fb5; --mine-bg:#e4eefa;
   --t-action:#2f6fb5; --t-controle:#7a3fb0; --t-valeur:#0f8a85; --t-avertissement:#b86a00;
   --t-minuterie:#3d4fb8; --t-checklist:#4a5866; --t-info:#6b7580;
   --r:14px;
@@ -23,22 +23,22 @@
     --bg:#12171b; --card:#1c2328; --fg:#eef1ef; --muted:#9aa6af; --line:#2f3a42;
     --accent:#f08a2c; --accent-fg:#1b1206;
     --ok:#4cc583; --ok-bg:#163526; --warn:#f2b44a; --warn-bg:#3a2b10; --bad:#ff6b70; --bad-bg:#3d1a1c;
-    --info-bg:#232c33; --top:#0b0f12; --top-fg:#eef1ef;
+    --info-bg:#232c33; --top:#0b0f12; --top-fg:#eef1ef; --mine:#6aa7ec; --mine-bg:#1a2a3d;
     --t-action:#6aa7ec; --t-controle:#b585e6; --t-valeur:#3fc7c0; --t-avertissement:#f2b44a;
     --t-minuterie:#8a9bff; --t-checklist:#a5b2be; --t-info:#9aa6af;
   }
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  -webkit-tap-highlight-color:transparent;min-height:100vh;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+body{background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;min-height:100vh;padding-bottom:24px}
 button,input,textarea{font:inherit;color:inherit}
-header.top{position:sticky;top:0;z-index:20;background:var(--top);color:var(--top-fg);padding:10px 16px calc(10px);
-  padding-top:calc(10px + env(safe-area-inset-top))}
+header.top{position:sticky;top:0;z-index:20;background:var(--top);color:var(--top-fg);padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top))}
 header.top .row{display:flex;align-items:center;gap:10px}
-header.top h1{font-size:17px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header.top h1{font-size:17px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header.top .sub{font-size:13px;opacity:.8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .iconbtn{background:transparent;border:1px solid rgba(255,255,255,.25);color:inherit;border-radius:10px;min-width:44px;height:40px;padding:0 10px}
+.sync{font-size:12px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.12);white-space:nowrap}
+.sync.off{background:var(--bad);color:#fff} .sync.pend{background:var(--warn);color:#1b1206}
 .progress{height:6px;background:rgba(255,255,255,.18);border-radius:3px;margin-top:8px;overflow:hidden}
 .progress>i{display:block;height:100%;background:var(--accent);width:0}
 #timers{display:flex;flex-direction:column;gap:6px;margin-top:8px}
@@ -52,8 +52,7 @@ main{padding:16px;max-width:640px;margin:0 auto}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
 .card h2{margin:0 0 6px;font-size:20px;line-height:1.25}
 .card h3{margin:0 0 8px;font-size:16px}
-.muted{color:var(--muted)}
-.small{font-size:14px}
+.muted{color:var(--muted)} .small{font-size:14px}
 .badge{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;color:#fff;background:var(--t-info)}
 .b-action{background:var(--t-action)} .b-contrôle{background:var(--t-controle)} .b-valeur{background:var(--t-valeur)}
 .b-avertissement{background:var(--t-avertissement)} .b-minuterie{background:var(--t-minuterie)} .b-checklist{background:var(--t-checklist)} .b-info{background:var(--t-info)}
@@ -74,11 +73,11 @@ figure figcaption{font-size:13px;color:var(--muted);margin-top:4px}
 .btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
 .btn.bad{background:var(--bad);color:#fff;border-color:var(--bad)}
 .btn.ghost{background:transparent}
+.btn.sm{min-height:40px;font-size:15px;padding:6px 12px;margin:0;width:auto}
 .btn:disabled{opacity:.45}
 .btnrow{display:flex;gap:10px}
 .btnrow .btn{flex:1}
-.actionbar{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--card);border-top:1px solid var(--line);
-  padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+.actionbar{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
 .actionbar .inner{max-width:640px;margin:0 auto}
 .actionbar .btn{margin:4px 0}
 label.fld{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
@@ -92,53 +91,52 @@ textarea.inp{min-height:70px;font-size:15px}
 .check:last-child{border-bottom:0}
 .check input{width:26px;height:26px;flex:none;margin:0;accent-color:var(--ok)}
 .countdown{font-size:48px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;margin:10px 0}
-.list a,.list button.li{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:12px 2px;color:inherit;text-decoration:none;cursor:pointer}
-.list .st{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex:none;border:2px solid var(--line)}
-.st.ok{background:var(--ok);border-color:var(--ok);color:#fff}
-.st.forced{background:var(--warn);border-color:var(--warn);color:#fff}
-.st.cur{border-color:var(--accent);color:var(--accent)}
-details summary{cursor:pointer;font-weight:650;padding:6px 0}
+.list button.li{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:12px 2px;color:inherit;cursor:pointer}
 .phase-sec{font-weight:700;margin:14px 0 2px;font-size:15px}
+.sec{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 2px 8px}
+.task{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+.task.mine{border-color:var(--mine);background:var(--mine-bg)}
+.task.done{opacity:.75}
+.task .tt{font-weight:700;font-size:16px}
+.task .meta{font-size:13px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.task .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.task .bar{height:5px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
+.task .bar i{display:block;height:100%;background:var(--ok)}
+.lvl{display:inline-block;font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:6px;padding:0 6px;color:var(--muted)}
+.who{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--mine)}
 .log{font-size:14px}
 .log .e{padding:8px 0;border-bottom:1px solid var(--line)}
 .log .e .h{color:var(--muted);font-size:12px}
-.tag{font-size:12px;font-weight:700;padding:1px 6px;border-radius:6px}
+.tag{font-size:12px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--info-bg)}
 .tag.ok{background:var(--ok-bg);color:var(--ok)} .tag.forced{background:var(--warn-bg);color:var(--warn)} .tag.bad{background:var(--bad-bg);color:var(--bad)}
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(110px + env(safe-area-inset-bottom));background:var(--top);color:var(--top-fg);padding:10px 16px;border-radius:12px;z-index:50;max-width:90%;display:none;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(120px + env(safe-area-inset-bottom));background:var(--top);color:var(--top-fg);padding:10px 16px;border-radius:12px;z-index:50;max-width:90%;display:none;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 #zoom{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:60;display:none;align-items:center;justify-content:center;padding:10px}
-#zoom img{max-width:100%;max-height:100%;touch-action:pinch-zoom}
+#zoom img{max-width:100%;max-height:100%}
 #menu{position:fixed;inset:0;z-index:40;display:none;background:rgba(0,0,0,.45)}
 #menu.open{display:block}
 #menu .sheet{position:absolute;top:0;left:0;bottom:0;width:min(86vw,340px);background:var(--card);padding:calc(16px + env(safe-area-inset-top)) 12px 16px;overflow-y:auto;box-shadow:4px 0 24px rgba(0,0,0,.3)}
 #menu .sheet h3{margin:4px 8px 12px;font-size:16px}
 #menu .mi{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:0;border-radius:10px;padding:14px 10px;font-size:16px;cursor:pointer}
-#menu .mi:active{background:var(--info-bg)}
 #menu .mi.danger{color:var(--bad)}
 #menu hr{border:0;border-top:1px solid var(--line);margin:8px 0}
 #menu .ver{font-size:12px;color:var(--muted);margin:12px 10px 0}
-.banner{background:var(--warn-bg);border:1px solid var(--warn);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:15px}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px}
 .kv dt{color:var(--muted)} .kv dd{margin:0}
-/* report */
 .report table{width:100%;border-collapse:collapse;font-size:12px}
 .report th,.report td{border:1px solid #bbb;padding:4px 6px;text-align:left;vertical-align:top}
 @media print{
-  .report div{overflow:visible!important}
   header.top,.actionbar,.noprint,#toast{display:none!important}
-  body{background:#fff;color:#000;padding:0}
-  .card{border:0;padding:0}
-  main{max-width:none}
+  body{background:#fff;color:#000;padding:0!important}
+  .card{border:0;padding:0} main{max-width:none} .report div{overflow:visible!important}
 }
 </style>
 </head>
 <body>
 <header class="top">
   <div class="row">
-    <button class="iconbtn" id="btnHome" aria-label="Menu">☰</button>
-    <div style="flex:1;min-width:0">
-      <h1 id="hTitle">J3D Procédures</h1>
-      <div class="sub" id="hSub"></div>
-    </div>
+    <button class="iconbtn" id="btnMenu" aria-label="Menu">☰</button>
+    <div style="flex:1;min-width:0"><h1 id="hTitle">J3D Procédures</h1><div class="sub" id="hSub"></div></div>
+    <span class="sync" id="sync" hidden></span>
   </div>
   <div class="progress" id="hProg" hidden><i></i></div>
   <div id="timers"></div>
@@ -146,13 +144,12 @@ details summary{cursor:pointer;font-weight:650;padding:6px 0}
 <main id="app"></main>
 <div class="actionbar" id="bar" hidden><div class="inner" id="barInner"></div></div>
 <div id="toast"></div>
-<div id="menu"><div class="sheet" id="menuSheet"></div></div>
 <div id="zoom"><img alt=""></div>
+<div id="menu"><div class="sheet" id="menuSheet"></div></div>
 
-<!-- Copie intégrée de la procédure : utilisée seulement si procedure_J3D.md est inaccessible -->
 <script type="text/plain" id="embedded-md">---
 procedure: Mise en œuvre imprimante béton J3D
-version: 0.1
+version: 0.2
 date: 2026-10-04
 statut: ébauche
 ---
@@ -171,7 +168,11 @@ CONVENTIONS (lues par l'appli)
     Rôle: <machine | pompe | IHM | chariot | topo>
     Note: <texte affiché en encadré>
     Répéter: oui                     (Type: minuterie → alerte périodique)
-    Commentaire: obligatoire         (commentaire exigé en cas d'anomalie ; facultatif sinon)
+    Début: <n>   Fin: <n>            (niveaux d'ouverture, mode multi-opérateurs)
+                                     sur une phase : la phase est une tâche ;
+                                     sur une étape : l'étape devient une tâche indépendante.
+                                     Une tâche s'ouvre quand toutes les tâches de Fin < son Début sont validées.
+    Commentaire: obligatoire         (commentaire exigé en cas d'anomalie)
   - [ ] élément                      → case à cocher (Type: checklist)
   ![légende](images/xxx.jpg)         → photo / schéma
   Texte libre                        → consigne affichée
@@ -183,9 +184,11 @@ CONVENTIONS (lues par l'appli)
 # Phase : Logistique de transport jusqu'au chantier
 
 ## 1.1 Matériel à acheminer
+Début: 1
+Fin: 1
 Type: checklist
 <!-- À COMPLÉTER : listing complet -->
-- [ ] Container machine (sur Ampliroll) : pompe
+- [ ] Container machine : pompe
 - [ ] Container machine : trémie
 - [ ] Container machine : imprimante
 - [ ] Container machine : compresseur
@@ -198,7 +201,9 @@ Type: checklist
 - [ ] 4 plaques sous patin
 - [ ] Big bag + support pour purges de démarrage et de fin
 
-## 1.2 Accessoires et outillage
+## 1.2 Point accessoires et outillage
+Début: 1
+Fin: 1
 Type: checklist
 <!-- À COMPLÉTER : liste outillage -->
 - [ ] Tuyau d'eau 25 m
@@ -211,6 +216,8 @@ Note: prévoir des outillages dédiés avec emplacements prévus.
 
 
 # Phase : Cartographie
+Début: 1
+Fin: 1
 Rôle: topo
 
 ## 2.1 Définir le set de points de repérage
@@ -223,6 +230,8 @@ Identifier les différentes positions de l'imprimante.
 
 
 # Phase : Implantation
+Début: 2
+Fin: 2
 
 ## 3.1 Positionner l'imprimante
 Type: action
@@ -245,6 +254,8 @@ Choisir un emplacement avec vue sur la zone de travail.
 
 
 # Phase : Réglage initial imprimante
+Début: 3
+Fin: 3
 Rôle: machine
 
 ## 4.1 Connecter l'imprimante
@@ -273,12 +284,12 @@ Placer les plaques de répartition sous les patins.
 ![Plaques sous patin](images/station_05_plaques_patin.jpg)
 
 ## 4.6 Nivelage
-Type: valeur
-Plage: 0..13 cm
+Type: Action
+Plage: de 0..13 cm
 Si hors plage: repositionner la machine
 
 ## 4.7 Lever l'imprimante
-Type: valeur
+Type: Action
 Chenilles à 48 cm du sol.
 Plage: 48..48 cm
 
@@ -289,6 +300,8 @@ Si non: reprendre le réglage des patins
 
 
 # Phase : Déploiement du bras
+Début: 4
+Fin: 4
 Rôle: machine
 Durée: 15 min
 
@@ -335,6 +348,8 @@ Type: action
 
 
 # Phase : Configuration IHM
+Début: 5
+Fin: 6
 Rôle: IHM
 
 ## 6.1 Connecter l'IHM
@@ -361,6 +376,8 @@ Si non: corriger l'offset
 
 
 # Phase : Calage des points (Theodolite Positioning Assistant)
+Début: 5
+Fin: 6
 Rôle: topo
 Durée: 20 min
 
@@ -393,6 +410,8 @@ Type: checklist
 
 
 # Phase : Air print
+Début: 7
+Fin: 7
 Rôle: IHM
 Durée: 10 min
 
@@ -419,6 +438,8 @@ Connecter le compresseur à l'imprimante et le mettre en route.
 
 
 # Phase : Préparation pompe
+Début: 3
+Fin: 7
 Rôle: pompe
 Durée: 20 min
 
@@ -440,6 +461,8 @@ Si non: corriger avant de poursuivre
 
 
 # Phase : Raccordement eau
+Début: 2
+Fin: 2
 Rôle: pompe
 
 ## 10.1 Brancher l'eau
@@ -453,6 +476,8 @@ Si non: vérifier l'alimentation en eau
 
 
 # Phase : Préparation du tuyau
+Début: 8
+Fin: 8
 Rôle: pompe
 
 ## 11.1 Poser le tuyau
@@ -465,6 +490,8 @@ Plage: 7..10 L
 
 
 # Phase : Chargement trémie
+Début: 2
+Fin: 8
 Rôle: chariot
 Opérateurs: 2
 
@@ -486,6 +513,8 @@ Type: action
 
 
 # Phase : Démarrage pompe
+Début: 9
+Fin: 9
 Rôle: pompe
 Note: tête positionnée sur le big bag.
 
@@ -529,6 +558,8 @@ Plage: 28..28 cm
 
 
 # Phase : Contrôles pendant la marche
+Début: 10
+Fin: 10
 Type: info
 <!-- Phase de référence consultable pendant l'impression, plus alertes périodiques -->
 
@@ -556,6 +587,8 @@ La pompe consomme ~1 t/h (1 big bag). Silo à remplir toutes les heures – acc�
 
 
 # Phase : Purge tuyau
+Début: 11
+Fin: 11
 Rôle: pompe
 
 ## 15.1 Tête sur big bag
@@ -591,6 +624,8 @@ Note: si bouchon (la balle ne sort pas), introduire le tuyau sans embout pour d�
 
 
 # Phase : Nettoyage pompe
+Début: 12
+Fin: 12
 Rôle: pompe
 
 ## 16.1 Démontage
@@ -612,6 +647,8 @@ Si non: purger
 
 
 # Phase : Démontage tuyau
+Début: 13
+Fin: 13
 Rôle: machine
 Opérateurs: 2
 
@@ -625,6 +662,8 @@ Replier les anneaux de guidage.
 
 
 # Phase : Repli machine
+Début: 14
+Fin: 14
 Rôle: machine
 
 ## 18.1 Replier la tête
@@ -665,6 +704,8 @@ Sens inverse du montage.
 
 
 # Phase : Rangement
+Début: 15
+Fin: 15
 
 ## 19.1 IHM
 Type: action
@@ -686,660 +727,686 @@ Type: checklist
 
 <script>
 "use strict";
-/* ============================================================
-   Stockage local (protégé : peut être indisponible)
-   ============================================================ */
-const store = {
-  get(k, d=null){ try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
-  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true;}catch(e){ toast("⚠ Stockage local indisponible – exportez le journal"); return false;} },
-  del(k){ try{ localStorage.removeItem(k);}catch(e){} }
+/* =====================================================================
+   J3D Procédures – v2 multi-opérateurs
+   - La procédure est lue dans procedure_J3D.md (conventions en tête du fichier)
+   - Les tâches (phases, ou étapes portant Début/Fin) s'ouvrent par niveaux
+   - L'avancement est partagé : Firebase si firebase-config.json est présent,
+     sinon stockage local (un seul téléphone, ou plusieurs onglets pour essai)
+   ===================================================================== */
+const MD_URL='procedure_J3D.md', CFG_URL='firebase-config.json';
+const store={
+  get(k,d=null){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v);}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}},
+  del(k){try{localStorage.removeItem(k);}catch(e){}}
 };
-const K = { cur:'j3d.current', arch:'j3d.archive', local:'j3d.localmd', lastVer:'j3d.lastversion', op:'j3d.operateur' };
-const MD_URL = 'procedure_J3D.md';
+const K={user:'j3d.user', local:'j3d.localmd', lastVer:'j3d.lastversion', cid:'j3d.cid', timers:'j3d.timers', db:'j3d.db'};
 
-/* ============================================================
-   Utilitaires
-   ============================================================ */
-const $ = s => document.querySelector(s);
-const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*/g,'$1<em>$2</em>');
-const noAcc = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
-const pad = n => String(n).padStart(2,'0');
-const fmtT = ms => { const d=new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
-const fmtD = ms => { const d=new Date(ms); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`; };
-const fmtDur = s => { s=Math.max(0,Math.round(s)); const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return h? `${h}:${pad(m)}:${pad(x)}` : `${pad(m)}:${pad(x)}`; };
-const num = v => { const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?null:n; };
+/* ---------- utilitaires ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inl=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*/g,'$1<em>$2</em>');
+const noAcc=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const pad=n=>String(n).padStart(2,'0');
+const fmtT=ms=>{const d=new Date(ms);return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;};
+const fmtD=ms=>{const d=new Date(ms);return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;};
+const fmtDur=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${pad(m)}:${pad(x)}`:`${pad(m)}:${pad(x)}`;};
+const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isNaN(n)?null:n;};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 let toastTimer;
-function toast(msg, ms=2600){ const t=$('#toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.style.display='none', ms); }
+function toast(msg,ms=2600){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',ms);}
 
-/* ============================================================
-   Parseur Markdown (conventions du fichier procédure)
-   ============================================================ */
-const TYPES = {action:'action', controle:'contrôle', valeur:'valeur', avertissement:'avertissement', minuterie:'minuterie', checklist:'checklist', info:'info'};
-function parseDuree(v){
-  const m = noAcc(v).match(/([\d.,]+)\s*(h|min|mn|m|s)?/); if(!m) return null;
-  const n=num(m[1]); const u=m[2]||'min';
-  return u==='h'? n*3600 : u==='s'? n : n*60;
-}
-/* Plage tolérante : « 7..9 bar », « de 0..13 cm », « 0 à 13 cm », « entre 7 et 9 bar », « 7-9 bar »,
-   « 28 ±1 cm », « ≥ 45 ° », « 45° mini », « < 13 cm », « 13 cm max », « 48 cm » (valeur cible) */
+/* =====================================================================
+   Parseur Markdown
+   ===================================================================== */
+const TYPES={action:'action',controle:'contrôle',valeur:'valeur',avertissement:'avertissement',minuterie:'minuterie',checklist:'checklist',info:'info'};
+function parseDuree(v){const m=noAcc(v).match(/([\d.,]+)\s*(h|min|mn|m|s)?/);if(!m)return null;const n=num(m[1]),u=m[2]||'min';return u==='h'?n*3600:u==='s'?n:n*60;}
 function parsePlage(v){
   const N='(-?\\d+(?:[.,]\\d+)?)';
-  let t=String(v).trim().replace(/^(?:de|entre|from|between)\s+/i,'');
-  let m;
-  if((m=t.match(new RegExp('^'+N+'\\s*(?:\\.\\.\\.?|à|a|et|-|–|—|to|/)\\s*'+N+'\\s*(.*)$','i'))))
-    return {min:num(m[1]), max:num(m[2]), unit:m[3].trim()};
-  if((m=t.match(new RegExp('^'+N+'\\s*(?:±|\\+/-|\\+-)\\s*'+N+'\\s*(.*)$'))))
-    return {min:num(m[1])-num(m[2]), max:num(m[1])+num(m[2]), unit:m[3].trim()};
-  if((m=t.match(new RegExp('^(?:<=?|≤|max(?:i(?:mum)?)?\\.?|inf[ée]rieur(?:e)?\\s+(?:ou\\s+[ée]gal(?:e)?\\s+)?[àa]|jusqu.[àa])\\s*'+N+'\\s*(.*)$','i'))))
-    return {min:-Infinity, max:num(m[1]), unit:m[2].trim()};
-  if((m=t.match(new RegExp('^(?:>=?|≥|min(?:i(?:mum)?)?\\.?|sup[ée]rieur(?:e)?\\s+(?:ou\\s+[ée]gal(?:e)?\\s+)?[àa]|au\\s+moins)\\s*'+N+'\\s*(.*)$','i'))))
-    return {min:num(m[1]), max:Infinity, unit:m[2].trim()};
-  if((m=t.match(new RegExp('^'+N+'\\s*(.*?)\\s*(mini?|minimum|maxi?|maximum)\\.?$','i')))){
-    const isMin=/^min/i.test(m[3]);
-    return isMin? {min:num(m[1]), max:Infinity, unit:m[2].trim()} : {min:-Infinity, max:num(m[1]), unit:m[2].trim()};
-  }
-  if((m=t.match(new RegExp('^'+N+'\\s*([^\\d]*)$'))))
-    return {min:num(m[1]), max:num(m[1]), unit:m[2].trim()};
+  let t=String(v).trim().replace(/^(?:de|entre|from|between)\s+/i,''); let m;
+  if((m=t.match(new RegExp('^'+N+'\\s*(?:\\.\\.\\.?|à|a|et|-|–|—|to|/)\\s*'+N+'\\s*(.*)$','i')))) return {min:num(m[1]),max:num(m[2]),unit:m[3].trim()};
+  if((m=t.match(new RegExp('^'+N+'\\s*(?:±|\\+/-|\\+-)\\s*'+N+'\\s*(.*)$')))) return {min:num(m[1])-num(m[2]),max:num(m[1])+num(m[2]),unit:m[3].trim()};
+  if((m=t.match(new RegExp('^(?:<=?|≤|max(?:i(?:mum)?)?\\.?|inf[ée]rieur(?:e)?\\s+(?:ou\\s+[ée]gal(?:e)?\\s+)?[àa]|jusqu.[àa])\\s*'+N+'\\s*(.*)$','i')))) return {min:-Infinity,max:num(m[1]),unit:m[2].trim()};
+  if((m=t.match(new RegExp('^(?:>=?|≥|min(?:i(?:mum)?)?\\.?|sup[ée]rieur(?:e)?\\s+(?:ou\\s+[ée]gal(?:e)?\\s+)?[àa]|au\\s+moins)\\s*'+N+'\\s*(.*)$','i')))) return {min:num(m[1]),max:Infinity,unit:m[2].trim()};
+  if((m=t.match(new RegExp('^'+N+'\\s*(.*?)\\s*(mini?|minimum|maxi?|maximum)\\.?$','i')))){const isMin=/^min/i.test(m[3]);return isMin?{min:num(m[1]),max:Infinity,unit:m[2].trim()}:{min:-Infinity,max:num(m[1]),unit:m[2].trim()};}
+  if((m=t.match(new RegExp('^'+N+'\\s*([^\\d]*)$')))) return {min:num(m[1]),max:num(m[1]),unit:m[2].trim()};
   return null;
 }
-function plageTxt(pl){
-  const u=pl.unit? ' '+pl.unit : '';
-  if(pl.min===-Infinity) return `≤ ${pl.max}${u}`;
-  if(pl.max===Infinity) return `≥ ${pl.min}${u}`;
-  if(pl.min===pl.max) return `${pl.min}${u}`;
-  return `${pl.min} à ${pl.max}${u}`;
-}
+function plageTxt(pl){const u=pl.unit?' '+pl.unit:'';if(pl.min===-Infinity)return `≤ ${pl.max}${u}`;if(pl.max===Infinity)return `≥ ${pl.min}${u}`;if(pl.min===pl.max)return `${pl.min}${u}`;return `${pl.min} à ${pl.max}${u}`;}
 function parseMD(text){
-  const warnings=[], meta={}, phases=[];
-  let src = String(text||'').replace(/\r\n?/g,'\n');
-  src = src.replace(/<!--[\s\S]*?-->/g, m=>m.replace(/[^\n]/g,''));   // retire commentaires, garde les n° de ligne
-  const lines = src.split('\n');
-  let i=0;
-  if(lines[0] && lines[0].trim()==='---'){
-    i=1;
-    while(i<lines.length && lines[i].trim()!=='---'){
-      const m=lines[i].match(/^\s*([^:]+?)\s*:\s*(.*)$/); if(m) meta[noAcc(m[1])]=m[2].trim(); i++;
-    }
-    i++;
-  }
-  let ph=null, st=null;
-  for(; i<lines.length; i++){
-    const raw=lines[i], ln=i+1, l=raw.trim();
-    if(!l) continue;
-    let m;
-    if((m=raw.match(/^#\s+(.+)$/))){
-      ph={name:m[1].replace(/^Phase\s*:\s*/i,'').trim(), line:ln, steps:[], text:[], notes:[]};
-      phases.push(ph); st=null; continue;
-    }
+  const warnings=[],meta={},phases=[];
+  let src=String(text||'').replace(/\r\n?/g,'\n').replace(/<!--[\s\S]*?-->/g,m=>m.replace(/[^\n]/g,''));
+  const lines=src.split('\n'); let i=0;
+  if(lines[0]&&lines[0].trim()==='---'){i=1;while(i<lines.length&&lines[i].trim()!=='---'){const m=lines[i].match(/^\s*([^:]+?)\s*:\s*(.*)$/);if(m)meta[noAcc(m[1])]=m[2].trim();i++;}i++;}
+  let ph=null,st=null;
+  for(;i<lines.length;i++){
+    const raw=lines[i],ln=i+1,l=raw.trim(); if(!l) continue; let m;
+    if((m=raw.match(/^#\s+(.+)$/))){ph={name:m[1].replace(/^Phase\s*:\s*/i,'').trim(),line:ln,steps:[],text:[],notes:[]};phases.push(ph);st=null;continue;}
     if((m=raw.match(/^##\s+(.+)$/))){
-      if(!ph){ warnings.push({line:ln,msg:'Étape avant toute phase'}); ph={name:'(sans phase)',line:ln,steps:[],text:[],notes:[]}; phases.push(ph); }
-      const t=m[1].trim(); const mm=t.match(/^(\d+(?:\.\d+)*[a-z]?)\s+(.+)$/i);
-      st={num:mm?mm[1]:'', title:mm?mm[2]:t, type:'action', typeSet:false, line:ln, text:[], notes:[], items:[], images:[]};
-      ph.steps.push(st); continue;
-    }
-    if(/^#{3,}\s/.test(raw)){ warnings.push({line:ln,msg:'Titre ### non géré (utiliser # pour une phase, ## pour une étape)'}); continue; }
-    if(!ph) continue;                       // texte libre avant la 1re phase : ignoré
-    const tgt = st || ph;
+      if(!ph){warnings.push({line:ln,msg:'Étape avant toute phase'});ph={name:'(sans phase)',line:ln,steps:[],text:[],notes:[]};phases.push(ph);}
+      const t=m[1].trim(),mm=t.match(/^(\d+(?:\.\d+)*[a-z]?)\s+(.+)$/i);
+      st={num:mm?mm[1]:'',title:mm?mm[2]:t,type:'action',typeSet:false,line:ln,text:[],notes:[],items:[],images:[]};ph.steps.push(st);continue;}
+    if(/^#{3,}\s/.test(raw)){warnings.push({line:ln,msg:'Titre ### non géré (utiliser # pour une phase, ## pour une étape)'});continue;}
+    if(!ph) continue;
+    const tgt=st||ph;
     if((m=l.match(/^([A-Za-zÀ-ÿ ]+?)\s*:\s*(.*)$/))){
-      const k=noAcc(m[1]), v=m[2].trim(); let used=true;
+      const k=noAcc(m[1]),v=m[2].trim();let used=true;
       switch(k){
-        case 'type': {
-          const t=TYPES[noAcc(v)];
-          if(st){ if(t){ st.type=t; st.typeSet=true; } else warnings.push({line:ln,msg:`Type inconnu « ${v} »`}); }
-          break; }
-        case 'plage': {
-          const pl=parsePlage(v);
-          if(pl && st){ st.plage=pl; }
-          else warnings.push({line:ln,msg:`Plage illisible « ${v} » (ex. : 7..9 bar, de 0 à 13 cm, 28 ±1 cm, ≥ 45 °, 13 cm max)`});
-          break; }
-        case 'duree': { const d=parseDuree(v); if(d===null) warnings.push({line:ln,msg:`Durée illisible « ${v} »`}); tgt.duree=d; tgt.dureeTxt=v; break; }
-        case 'si non': tgt.siNon=v; break;
-        case 'si hors plage': tgt.siHors=v; break;
-        case 'operateurs': tgt.operateurs=v; break;
-        case 'role': tgt.role=v; break;
-        case 'note': tgt.notes.push(v); break;
-        case 'commentaire': tgt.commentReq=/oblig/i.test(noAcc(v)); break;
-        case 'repeter': tgt.repeat=/^(oui|yes|true|1)/i.test(noAcc(v)); break;
-        default: used=false;
+        case 'type':{const t=TYPES[noAcc(v)];if(st){if(t){st.type=t;st.typeSet=true;}else warnings.push({line:ln,msg:`Type inconnu « ${v} »`});}break;}
+        case 'plage':{const pl=parsePlage(v);if(pl&&st)st.plage=pl;else warnings.push({line:ln,msg:`Plage illisible « ${v} » (ex. : 7..9 bar, de 0 à 13 cm, 28 ±1 cm, ≥ 45 °, 13 cm max)`});break;}
+        case 'duree':{const d=parseDuree(v);if(d===null)warnings.push({line:ln,msg:`Durée illisible « ${v} »`});tgt.duree=d;tgt.dureeTxt=v;break;}
+        case 'si non':tgt.siNon=v;break;
+        case 'si hors plage':tgt.siHors=v;break;
+        case 'operateurs':tgt.operateurs=v;break;
+        case 'role':tgt.role=v;break;
+        case 'note':tgt.notes.push(v);break;
+        case 'repeter':tgt.repeat=/^(oui|yes|true|1)/i.test(noAcc(v));break;
+        case 'commentaire':tgt.commentReq=/oblig/i.test(noAcc(v));break;
+        case 'debut':{const n=parseInt(v,10);if(isNaN(n))warnings.push({line:ln,msg:`Début illisible « ${v} »`});else tgt.debut=n;break;}
+        case 'fin':{const n=parseInt(v,10);if(isNaN(n))warnings.push({line:ln,msg:`Fin illisible « ${v} »`});else tgt.fin=n;break;}
+        default:used=false;
       }
       if(used) continue;
     }
-    if((m=l.match(/^[-*]\s+\[[ xX]\]\s+(.+)$/))){ if(st) st.items.push(m[1]); else warnings.push({line:ln,msg:'Case à cocher hors étape'}); continue; }
-    if((m=l.match(/^!\[([^\]]*)\]\(\s*([^)\s]+)\s*\)/))){ if(st) st.images.push({alt:m[1],src:m[2]}); else warnings.push({line:ln,msg:'Image hors étape'}); continue; }
+    if((m=l.match(/^[-*]\s+\[[ xX]\]\s+(.+)$/))){if(st)st.items.push(m[1]);else warnings.push({line:ln,msg:'Case à cocher hors étape'});continue;}
+    if((m=l.match(/^!\[([^\]]*)\]\(\s*([^)\s]+)\s*\)/))){if(st)st.images.push({alt:m[1],src:m[2]});else warnings.push({line:ln,msg:'Image hors étape'});continue;}
     tgt.text.push(l.replace(/^[-*]\s+/,'• '));
   }
-  phases.forEach(p=>p.steps.forEach(s=>{
-    const lbl=`Étape ${s.num||s.title}`;
-    if(!s.typeSet) warnings.push({line:s.line,msg:`${lbl} : pas de « Type: » (action par défaut)`});
-    if(s.type==='valeur' && !s.plage) warnings.push({line:s.line,msg:`${lbl} : Type valeur sans Plage`});
-    if(s.type==='minuterie' && !s.duree) warnings.push({line:s.line,msg:`${lbl} : minuterie sans Durée`});
-    if(s.type==='checklist' && !s.items.length) warnings.push({line:s.line,msg:`${lbl} : checklist sans case « - [ ] »`});
-  }));
-  const flat=[]; phases.forEach((p,pi)=>p.steps.forEach((s,si)=>flat.push({p:pi,s:si,key:`${pi}.${si}`,phase:p,step:s})));
-  if(!flat.length) warnings.push({line:0,msg:'Aucune étape trouvée'});
-  return {meta, phases, flat, warnings};
-}
-
-/* ============================================================
-   État
-   ============================================================ */
-let P = null;            // procédure affichée (parsée)
-let PUB = null;          // { text, parsed, source } : dernière procédure disponible (publiée / locale / intégrée)
-let CUR = store.get(K.cur);   // intervention en cours
-let view = 'home', browsePos = 0;
-let uiState = {};        // état transitoire de l'écran courant
-let audioCtx=null, wakeLock=null, deferredInstall=null;
-
-function save(){ if(CUR) store.set(K.cur, CUR); }
-function stepAt(i){ return P && P.flat[i]; }
-
-/* ============================================================
-   Chargement de la procédure
-   ============================================================ */
-async function loadPublished(){
-  const local = store.get(K.local);
-  if(local && local.text){ return {text:local.text, source:`fichier local (${local.name||'.md'})`}; }
-  let missing=false, offline=false;
-  try{
-    const r = await fetch(MD_URL, {cache:'no-cache'});
-    if(r.ok){ return {text: await r.text(), source:'publiée'}; }
-    missing = true;
-  }catch(e){ offline=true; }
-  const emb = $('#embedded-md').textContent;
-  const why = missing? 'fichier MD introuvable sur le serveur' : 'hors ligne, fichier non encore en cache';
-  if(emb && !emb.includes('/*EMBEDDED_MD*/')) return {text:emb, source:`copie intégrée (${why})`, missing, offline};
-  return {text:'', source:'aucune', missing, offline};
-}
-async function init(){
-  const pub = await loadPublished();
-  PUB = {...pub, parsed: parseMD(pub.text)};
-  if(CUR && !CUR.closedAt){ P = parseMD(CUR.mdText); } else { CUR=null; P = PUB.parsed; }
-  const v = PUB.parsed.meta.version, last = store.get(K.lastVer);
-  if(v && last && v!==last && pub.source==='publiée') toast(`Nouvelle procédure chargée : v${v}`, 4000);
-  if(v && pub.source==='publiée') store.set(K.lastVer, v);
-  if(CUR) restoreTimers();
-  render();
-  warmImages(PUB.parsed);
-}
-function warmImages(parsed){
-  // met les images en cache (service worker) pour le hors ligne
-  parsed.flat.forEach(f=>f.step.images.forEach(im=>{ fetch(im.src).catch(()=>{}); }));
-}
-
-/* ============================================================
-   Intervention : démarrage, journal, résultats
-   ============================================================ */
-function startIntervention(chantier, operateur){
-  store.set(K.op, operateur);
-  CUR = { id: Date.now().toString(36), chantier, operateur, startedAt: Date.now(),
-          procName: PUB.parsed.meta.procedure||'', procVersion: PUB.parsed.meta.version||'?', procDate: PUB.parsed.meta.date||'',
-          procSource: PUB.source, mdText: PUB.text, pos:0, results:{}, log:[], timers:[] };
-  P = PUB.parsed;
-  logEvt(null, 'début', `Intervention démarrée – ${chantier}`, '', '');
-  save(); requestWake(); go('step');
-}
-function logEvt(f, status, label, value, comment){
-  if(!CUR) return;
-  CUR.log.push({ t:Date.now(), phase: f? f.phase.name : '', num: f? f.step.num : '', title: f? f.step.title : label,
-    type: f? f.step.type : 'événement', status, value: value??'', unit: f&&f.step.plage? f.step.plage.unit : '', comment: comment||'' });
-}
-function record(f, status, value, comment){
-  CUR.results[f.key] = {status, value: value??'', comment: comment||'', at: Date.now()};
-  logEvt(f, status, f.step.title, value, comment);
-  save();
-}
-function nextStep(){
-  if(CUR.pos < P.flat.length-1){ CUR.pos++; save(); uiState={}; render(); window.scrollTo(0,0); }
-  else { save(); toast('Procédure terminée ✓'); go('journal'); }
-}
-function closeIntervention(){
-  CUR.closedAt = Date.now(); logEvt(null,'fin','Intervention clôturée','','');
-  CUR.timers = [];
-  const arch = store.get(K.arch, []); arch.unshift(CUR); store.set(K.arch, arch.slice(0,20));
-  const closed = CUR; CUR=null; store.del(K.cur); P = PUB.parsed; releaseWake();
-  return closed;
-}
-
-/* ============================================================
-   Minuteries / alertes
-   ============================================================ */
-function startTimer(f){
-  ensureAudio(); askNotif();
-  const s=f.step, dur=s.duree||60;
-  CUR.timers = CUR.timers.filter(t=>t.key!==f.key);
-  CUR.timers.push({key:f.key, label:`${s.num} ${s.title}`, dur, endAt: Date.now()+dur*1000, repeat: !!s.repeat, due:false});
-  logEvt(f,'minuterie',s.title, s.dureeTxt||fmtDur(dur), s.repeat?'alerte périodique démarrée':'démarrée');
-  save(); renderTimers();
-}
-function stopTimer(key){
-  const t=CUR && CUR.timers.find(x=>x.key===key); if(!t) return;
-  CUR.timers = CUR.timers.filter(x=>x.key!==key);
-  logEvt(null,'minuterie',`Arrêt minuterie ${t.label}`,'',''); save(); renderTimers(); if(view==='step') render();
-}
-function ackTimer(key){
-  const t=CUR.timers.find(x=>x.key===key); if(!t) return;
-  if(t.repeat){ t.due=false; t.endAt=Date.now()+t.dur*1000; logEvt(null,'alerte',`Alerte acquittée : ${t.label}`,'',''); }
-  else { t.due=false; t.acked=true; }
-  save(); renderTimers();
-}
-function restoreTimers(){ renderTimers(); }
-function tick(){
-  if(!CUR || !CUR.timers || !CUR.timers.length) return;
-  const now=Date.now(); let changed=false;
-  CUR.timers.forEach(t=>{
-    if(!t.due && !t.acked && now>=t.endAt){ t.due=true; changed=true; alarm(t.label, t.repeat? 'Alerte périodique' : 'Minuterie écoulée'); logEvt(null,'alerte',`Échéance : ${t.label}`,'',''); }
+  phases.forEach(p=>{
+    if(p.fin!=null&&p.debut!=null&&p.fin<p.debut) warnings.push({line:p.line,msg:`Phase « ${p.name} » : Fin < Début`});
+    p.steps.forEach(s=>{
+      const lbl=`Étape ${s.num||s.title}`;
+      if(!s.typeSet) warnings.push({line:s.line,msg:`${lbl} : pas de « Type: » (action par défaut)`});
+      if(s.type==='valeur'&&!s.plage) warnings.push({line:s.line,msg:`${lbl} : Type valeur sans Plage`});
+      if(s.type==='minuterie'&&!s.duree) warnings.push({line:s.line,msg:`${lbl} : minuterie sans Durée`});
+      if(s.type==='checklist'&&!s.items.length) warnings.push({line:s.line,msg:`${lbl} : checklist sans case « - [ ] »`});
+    });
   });
-  if(changed){ save(); if(view==='step') render(); }
+  const flat=[];phases.forEach((p,pi)=>p.steps.forEach((s,si)=>flat.push({p:pi,s:si,key:`s${pi}_${si}`,phase:p,step:s})));
+  if(!flat.length) warnings.push({line:0,msg:'Aucune étape trouvée'});
+  const tasks=buildTasks(phases);
+  return {meta,phases,flat,tasks,warnings};
+}
+/* Tâches : une phase = une tâche ; une étape portant Début/Fin devient une tâche indépendante.
+   Sans Début/Fin, une tâche prend le niveau suivant la précédente (enchaînement simple). */
+function buildTasks(phases){
+  const tasks=[]; let last=0;
+  const mk=(id,title,ph,steps,src)=>{
+    const debut = src.debut ?? (last+1);
+    const fin = Math.max(debut, src.fin ?? debut);
+    const ops = Math.max(1, parseInt(src.operateurs ?? ph.operateurs ?? 1,10) || 1);
+    const t={id,title,phase:ph,steps,debut,fin,ops,role:src.role||ph.role||''};
+    tasks.push(t); last=fin; return t;
+  };
+  phases.forEach((ph,pi)=>{
+    const rest=[];
+    ph.steps.forEach((st,si)=>{
+      const f={p:pi,s:si,key:`s${pi}_${si}`,phase:ph,step:st};
+      if(st.debut!=null) mk(`t${pi}_${si}`,`${st.num} ${st.title}`.trim(),ph,[f],st);
+      else rest.push(f);
+    });
+    if(rest.length) mk(`t${pi}`,ph.name,ph,rest,ph);
+  });
+  return tasks;
+}
+
+/* =====================================================================
+   Stockage partagé : adaptateur local ou Firebase (même interface)
+   ===================================================================== */
+function setPath(obj,path,val){const ks=path.split('.');let o=obj;for(let i=0;i<ks.length-1;i++){if(typeof o[ks[i]]!=='object'||o[ks[i]]===null)o[ks[i]]={};o=o[ks[i]];}if(val===undefined)delete o[ks.at(-1)];else o[ks.at(-1)]=val;}
+function getPath(obj,path){return path.split('.').reduce((o,k)=>o==null?undefined:o[k],obj);}
+
+const LocalStore={
+  kind:'local', label:'Local (ce téléphone)',
+  async init(){ this.bc = ('BroadcastChannel' in window)? new BroadcastChannel('j3d') : null; this.subs=new Set();
+    if(this.bc) this.bc.onmessage=()=>this.emit(); window.addEventListener('storage',e=>{ if(e.key===K.db) this.emit(); }); return true; },
+  db(){ return store.get(K.db,{chantiers:{},logs:{}}); },
+  save(d){ store.set(K.db,d); this.bc&&this.bc.postMessage('x'); this.emit(); },
+  emit(){ this.subs.forEach(f=>f()); },
+  onChange(f){ this.subs.add(f); return ()=>this.subs.delete(f); },
+  watchList(cb){ const f=()=>{ const d=this.db(); cb(Object.entries(d.chantiers).map(([id,c])=>({id,...c}))); }; f(); return this.onChange(f); },
+  watch(cid,cb){ const f=()=>{ const c=this.db().chantiers[cid]; cb(c?{id:cid,...c}:null,{pending:false,fromCache:false}); }; f(); return this.onChange(f); },
+  watchLog(cid,cb){ const f=()=>cb((this.db().logs[cid]||[]).slice()); f(); return this.onChange(f); },
+  async create(data){ const d=this.db(); const id=uid(); d.chantiers[id]=data; d.logs[id]=[]; this.save(d); return id; },
+  async update(cid,fields){ const d=this.db(); const c=d.chantiers[cid]; if(!c) return; Object.entries(fields).forEach(([p,v])=>{
+      if(v&&v.__union){ const a=getPath(c,p)||[]; v.__union.forEach(x=>{if(!a.includes(x))a.push(x);}); setPath(c,p,a); }
+      else if(v&&v.__remove){ const a=(getPath(c,p)||[]).filter(x=>!v.__remove.includes(x)); setPath(c,p,a); }
+      else setPath(c,p,v); }); this.save(d); },
+  async take(cid,tid,name,max){ const d=this.db(); const c=d.chantiers[cid]; const t=getPath(c,`tasks.${tid}`)||{}; const ops=t.ops||[];
+      if(ops.includes(name)) return true; if(ops.length>=max) return false;
+      setPath(c,`tasks.${tid}.ops`,[...ops,name]); if(!t.status||t.status==='libre') setPath(c,`tasks.${tid}.status`,'en cours');
+      if(!t.startedAt) setPath(c,`tasks.${tid}.startedAt`,Date.now()); this.save(d); return true; },
+  async log(cid,e){ const d=this.db(); (d.logs[cid]=d.logs[cid]||[]).push(e); this.save(d); },
+  union:a=>({__union:a}), remove:a=>({__remove:a})
+};
+
+const FireStore={
+  kind:'firebase', label:'Synchronisé',
+  async init(cfg){
+    const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
+    const [A,F,Au]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-firestore.js'),import(B+'firebase-auth.js')]);
+    this.F=F; const app=A.initializeApp(cfg);
+    try{ this.db=F.initializeFirestore(app,{localCache:F.persistentLocalCache({tabManager:F.persistentMultipleTabManager()})}); }
+    catch(e){ this.db=F.getFirestore(app); }
+    const auth=Au.getAuth(app);
+    await new Promise((res)=>{ const off=Au.onAuthStateChanged(auth,u=>{ if(u){ off(); res(); } }); Au.signInAnonymously(auth).catch(()=>{ /* hors ligne : session déjà en cache */ setTimeout(res,1500); }); });
+    return true;
+  },
+  watchList(cb){ const F=this.F; return F.onSnapshot(F.collection(this.db,'chantiers'), s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))), e=>console.warn(e)); },
+  watch(cid,cb){ const F=this.F; return F.onSnapshot(F.doc(this.db,'chantiers',cid),{includeMetadataChanges:true}, s=>cb(s.exists()?{id:s.id,...s.data()}:null,{pending:s.metadata.hasPendingWrites,fromCache:s.metadata.fromCache}), e=>console.warn(e)); },
+  watchLog(cid,cb){ const F=this.F; return F.onSnapshot(F.query(F.collection(this.db,'chantiers',cid,'log'),F.orderBy('t')), s=>cb(s.docs.map(d=>d.data())), e=>console.warn(e)); },
+  async create(data){ const F=this.F; const ref=F.doc(F.collection(this.db,'chantiers')); F.setDoc(ref,data).catch(e=>console.warn(e)); return ref.id; },
+  async update(cid,fields){ const F=this.F; const out={}; Object.entries(fields).forEach(([p,v])=>{ out[p]= v&&v.__union? F.arrayUnion(...v.__union) : v&&v.__remove? F.arrayRemove(...v.__remove) : v===undefined? F.deleteField() : v; });
+      return F.updateDoc(F.doc(this.db,'chantiers',cid),out).catch(e=>console.warn(e)); },
+  async take(cid,tid,name,max){ const F=this.F, ref=F.doc(this.db,'chantiers',cid);
+    const apply=(t)=>{ const ops=t.ops||[]; if(ops.includes(name)) return null; if(ops.length>=max) return false;
+      const u={[`tasks.${tid}.ops`]:F.arrayUnion(name)}; if(!t.status||t.status==='libre') u[`tasks.${tid}.status`]='en cours'; if(!t.startedAt) u[`tasks.${tid}.startedAt`]=Date.now(); return u; };
+    if(navigator.onLine){
+      try{ return await F.runTransaction(this.db, async tx=>{ const s=await tx.get(ref); const t=getPath(s.data()||{},`tasks.${tid}`)||{}; const u=apply(t); if(u===false) return false; if(u) tx.update(ref,u); return true; }); }
+      catch(e){ console.warn(e); }
+    }
+    const t=getPath(CH||{},`tasks.${tid}`)||{}; const u=apply(t); if(u===false) return false; if(u) F.updateDoc(ref,u).catch(e=>console.warn(e)); return true; },
+  async log(cid,e){ const F=this.F; F.addDoc(F.collection(this.db,'chantiers',cid,'log'),e).catch(x=>console.warn(x)); },
+  union:a=>({__union:a}), remove:a=>({__remove:a})
+};
+
+/* =====================================================================
+   État de l'appli
+   ===================================================================== */
+let S=LocalStore;          // stockage actif
+let PUB=null;              // procédure disponible { text, parsed, source, missing }
+let LIST=[];               // chantiers (tous)
+let CID=store.get(K.cid);  // chantier ouvert
+let CH=null, CHP=null;     // document chantier + procédure parsée du chantier
+let META={pending:false,fromCache:false};
+let LOG=[];                // journal du chantier ouvert
+const QS_USER=new URLSearchParams(location.search).get('user');   // ?user=Nom : nom forcé pour cet onglet (essais)
+let USER=QS_USER||store.get(K.user,'');
+let view='home', uiState={}, curTid=null, viewedArch=null;
+let unsubCh=null, unsubLog=null;
+let audioCtx=null, wakeLock=null, deferredInstall=null;
+let TIMERS=store.get(K.timers,[]);  // minuteries locales à ce téléphone
+
+/* ---------- chargement procédure ---------- */
+async function loadPublished(){
+  const local=store.get(K.local); if(local&&local.text) return {text:local.text,source:`fichier local (${local.name||'.md'})`};
+  let missing=false;
+  try{ const r=await fetch(MD_URL,{cache:'no-cache'}); if(r.ok) return {text:await r.text(),source:'publiée'}; missing=true; }catch(e){}
+  const emb=$('#embedded-md').textContent;
+  const why=missing?'fichier MD introuvable sur le serveur':'hors ligne, fichier non encore en cache';
+  if(emb&&!emb.includes('/*EMBEDDED_MD*/')) return {text:emb,source:`copie intégrée (${why})`,missing};
+  return {text:'',source:'aucune',missing};
+}
+async function loadConfig(){ try{ const r=await fetch(CFG_URL,{cache:'no-cache'}); if(r.ok){ const c=await r.json(); if(c&&c.projectId) return c; } }catch(e){} return null; }
+
+async function init(){
+  const pub=await loadPublished(); PUB={...pub,parsed:parseMD(pub.text)};
+  const cfg=await loadConfig();
+  if(cfg){ try{ await FireStore.init(cfg); S=FireStore; }catch(e){ console.warn('Firebase indisponible',e); toast('⚠ Synchronisation indisponible – mode local',4000); await LocalStore.init(); S=LocalStore; } }
+  else { await LocalStore.init(); S=LocalStore; }
+  S.watchList(l=>{ LIST=l; if(view==='home'||view==='archives') render(); });
+  if(CID) openChantier(CID,false); else render();
+  warmImages(PUB.parsed);
+  window.addEventListener('online',renderSync); window.addEventListener('offline',renderSync);
+}
+function warmImages(parsed){ parsed.flat.forEach(f=>f.step.images.forEach(im=>fetch(im.src).catch(()=>{}))); }
+
+/* ---------- chantier ---------- */
+async function createChantier(name){
+  const P=PUB.parsed;
+  const data={name, createdAt:Date.now(), createdBy:USER, closedAt:null,
+    procName:P.meta.procedure||'', procVersion:P.meta.version||'?', procDate:P.meta.date||'', procSource:PUB.source, mdText:PUB.text, tasks:{}, users:{[USER]:Date.now()}};
+  const id=await S.create(data);
+  await S.log(id,{t:Date.now(),by:USER,task:'',phase:'',num:'',title:`Chantier créé – ${name}`,type:'événement',status:'début',value:'',unit:'',comment:''});
+  openChantier(id,true);
+}
+function openChantier(id,goBoard=true){
+  if(unsubCh) unsubCh(); if(unsubLog) unsubLog();
+  CID=id; store.set(K.cid,id); CH=null; CHP=null; LOG=[];
+  let firstLoad=true;
+  unsubCh=S.watch(id,(c,meta)=>{
+    META=meta||META;
+    if(!c){ if(!firstLoad||!META.fromCache){ CH=null; CID=null; store.del(K.cid); if(view!=='home'){ toast('Chantier introuvable'); go('home'); } } return; }
+    const prev=CH; CH=c; if(!CHP || prev?.mdText!==c.mdText) CHP=parseMD(c.mdText);
+    if(firstLoad){ firstLoad=false; heartbeat(); requestWake(); if(goBoard || view==='home') go(c.closedAt?'journal':'board'); else render(); return; }
+    onRemoteChange(prev,c);
+  });
+  unsubLog=S.watchLog(id,l=>{ LOG=l; if(view==='journal') render(); });
+}
+function leaveChantier(){ if(unsubCh) unsubCh(); if(unsubLog) unsubLog(); unsubCh=unsubLog=null; CID=null; CH=null; CHP=null; store.del(K.cid); releaseWake(); go('home'); }
+function heartbeat(){ if(CID&&CH&&USER&&!CH.closedAt) S.update(CID,{[`users.${USER}`]:Date.now()}); }
+setInterval(heartbeat,60000);
+
+/* ---------- modèle des tâches ---------- */
+const TS=tid=>(CH&&CH.tasks&&CH.tasks[tid])||{};
+const isDone=t=>TS(t.id).status==='terminée';
+const isOpen=t=>CHP.tasks.every(o=>o===t||o.fin>=t.debut||isDone(o));
+function taskState(t){
+  const s=TS(t.id), ops=s.ops||[];
+  if(s.status==='terminée') return 'done';
+  if(!isOpen(t)) return 'locked';
+  if(ops.includes(USER)) return 'mine';
+  if(ops.length>=t.ops) return 'full';
+  if(ops.length) return 'shared';
+  return 'free';
+}
+function levelInfo(){ const undone=CHP.tasks.filter(t=>!isDone(t)); return undone.length? Math.min(...undone.map(t=>t.fin)) : null; }
+function taskPos(t){ const s=TS(t.id); return Math.min(s.pos||0, t.steps.length-1); }
+function doneCount(t){ const r=TS(t.id).results||{}; return t.steps.filter(f=>r[f.key]).length; }
+
+function onRemoteChange(prev,c){
+  // notifications utiles : tâches nouvellement ouvertes, chantier clôturé
+  if(c.closedAt && !prev?.closedAt){ toast('Chantier clôturé'); }
+  const prevOpen=new Set(); if(prev){ const save=CH; CH=prev; CHP.tasks.forEach(t=>{ if(isOpen(t)&&!isDone(t)) prevOpen.add(t.id); }); CH=save; }
+  const newly=CHP.tasks.filter(t=>isOpen(t)&&!isDone(t)&&!prevOpen.has(t.id));
+  if(prev && newly.length){ toast(`Nouvelle(s) tâche(s) : ${newly.map(t=>t.title).join(', ')}`,4000); try{navigator.vibrate&&navigator.vibrate(150);}catch(e){} }
+  if(view==='step' && curTid){
+    const t=CHP.tasks.find(x=>x.id===curTid), a=prev?.tasks?.[curTid]||{}, b=c.tasks?.[curTid]||{};
+    if(!t || a.pos!==b.pos || a.status!==b.status || JSON.stringify(a.ops)!==JSON.stringify(b.ops)){ uiState={}; render(); }
+    else renderSync();
+    return;
+  }
+  render();
+}
+
+/* =====================================================================
+   Actions sur les tâches
+   ===================================================================== */
+function logEvt(t,f,status,label,value,comment){
+  if(!CID) return;
+  S.log(CID,{t:Date.now(),by:USER,task:t?t.title:'',phase:f?f.phase.name:(t?t.phase.name:''),num:f?f.step.num:'',title:f?f.step.title:label,
+    type:f?f.step.type:'événement',status,value:value??'',unit:f&&f.step.plage?f.step.plage.unit:'',comment:comment||''});
+}
+async function takeTask(t){
+  if(!isOpen(t)){ toast('Tâche pas encore ouverte'); return; }
+  const ok=await S.take(CID,t.id,USER,t.ops);
+  if(ok===false){ toast(`Tâche complète (${t.ops} opérateur${t.ops>1?'s':''} max)`); return; }
+  logEvt(t,null,'prise',`Tâche prise : ${t.title}`,'','');
+  curTid=t.id; go('step');
+}
+async function releaseTask(t){
+  const s=TS(t.id), ops=(s.ops||[]).filter(x=>x!==USER);
+  const u={[`tasks.${t.id}.ops`]:S.remove([USER])}; if(!ops.length && s.status!=='terminée') u[`tasks.${t.id}.status`]='libre';
+  await S.update(CID,u); logEvt(t,null,'relâchée',`Tâche relâchée : ${t.title}`,'','');
+  curTid=null; go('board');
+}
+async function reopenTask(t){
+  await S.update(CID,{[`tasks.${t.id}.status`]:'en cours',[`tasks.${t.id}.doneAt`]:null,[`tasks.${t.id}.ops`]:S.union([USER])});
+  logEvt(t,null,'rouverte',`Tâche rouverte : ${t.title}`,'',''); curTid=t.id; go('step');
+}
+async function recordStep(t,f,status,value,comment,extra){
+  const pos=taskPos(t), last=pos>=t.steps.length-1;
+  const res={status,value:value??'',comment:comment||'',at:Date.now(),by:USER,...(extra||{})};
+  const u={[`tasks.${t.id}.results.${f.key}`]:res};
+  if(last){ u[`tasks.${t.id}.status`]='terminée'; u[`tasks.${t.id}.doneAt`]=Date.now(); u[`tasks.${t.id}.pos`]=pos; }
+  else u[`tasks.${t.id}.pos`]=pos+1;
+  // mise à jour optimiste locale pour un affichage immédiat
+  Object.entries(u).forEach(([p,v])=>setPath(CH,p,v));
+  logEvt(t,f,status,f.step.title,value,comment);
+  S.update(CID,u);
+  uiState={};
+  if(last){ logEvt(t,null,'terminée',`Tâche terminée : ${t.title}`,'',''); toast(`✓ ${t.title} terminée`); curTid=null; go('board'); }
+  else { render(); window.scrollTo(0,0); }
+}
+async function setPos(t,p){ setPath(CH,`tasks.${t.id}.pos`,p); S.update(CID,{[`tasks.${t.id}.pos`]:p}); uiState={}; render(); window.scrollTo(0,0); }
+async function closeChantier(){
+  await S.update(CID,{closedAt:Date.now()}); logEvt(null,null,'fin','Chantier clôturé','','');
+  TIMERS=TIMERS.filter(x=>x.cid!==CID); store.set(K.timers,TIMERS); toast('Chantier clôturé – pensez à exporter le journal',4000);
+}
+
+/* =====================================================================
+   Minuteries locales (son, vibration, notification)
+   ===================================================================== */
+function startTimer(t,f){
+  ensureAudio(); askNotif(); const s=f.step,dur=s.duree||60, key=`${CID}:${t.id}:${f.key}`;
+  TIMERS=TIMERS.filter(x=>x.key!==key);
+  TIMERS.push({key,cid:CID,label:`${s.num} ${s.title}`,dur,endAt:Date.now()+dur*1000,repeat:!!s.repeat,due:false});
+  store.set(K.timers,TIMERS); logEvt(t,f,'minuterie',s.title,s.dureeTxt||fmtDur(dur),s.repeat?'alerte périodique démarrée':'démarrée'); renderTimers();
+}
+const timerOf=(t,f)=>TIMERS.find(x=>x.key===`${CID}:${t.id}:${f.key}`);
+function stopTimer(key){ TIMERS=TIMERS.filter(x=>x.key!==key); store.set(K.timers,TIMERS); renderTimers(); if(view==='step') render(); }
+function ackTimer(key){ const x=TIMERS.find(y=>y.key===key); if(!x) return; if(x.repeat){ x.due=false; x.endAt=Date.now()+x.dur*1000; logEvt(null,null,'alerte',`Alerte acquittée : ${x.label}`,'',''); } else { x.due=false; x.acked=true; } store.set(K.timers,TIMERS); renderTimers(); }
+function tick(){
+  const now=Date.now(); let ch=false;
+  TIMERS.forEach(x=>{ if(!x.due&&!x.acked&&now>=x.endAt){ x.due=true; ch=true; alarm(x.label,x.repeat?'Alerte périodique':'Minuterie écoulée'); if(x.cid===CID) logEvt(null,null,'alerte',`Échéance : ${x.label}`,'',''); } });
+  if(ch){ store.set(K.timers,TIMERS); if(view==='step') render(); }
   renderTimers();
-  const cd=$('#cd'); if(cd){ const t=CUR.timers.find(x=>x.key===cd.dataset.key); if(t) cd.textContent = t.due||t.acked? '00:00' : fmtDur((t.endAt-now)/1000); }
+  const cd=$('#cd'); if(cd){ const x=TIMERS.find(y=>y.key===cd.dataset.key); if(x) cd.textContent=x.due||x.acked?'00:00':fmtDur((x.endAt-now)/1000); }
 }
 function renderTimers(){
-  const box=$('#timers'); if(!CUR || !CUR.timers.length){ box.innerHTML=''; return; }
+  const box=$('#timers'), list=TIMERS.filter(x=>x.cid===CID && !(x.acked&&!x.repeat)); if(!CID||!list.length){ box.innerHTML=''; return; }
   const now=Date.now();
-  box.innerHTML = CUR.timers.filter(t=>!(t.acked && !t.repeat)).map(t=>`
-    <div class="tchip ${t.due?'due':''}">⏱ <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.label)}</span>
-      <b>${t.due?'ÉCHU':fmtDur((t.endAt-now)/1000)}</b>
-      ${t.due? `<button class="x" data-ack="${t.key}">${t.repeat?'Fait, relancer':'OK'}</button>` : (t.repeat?`<button class="x" data-stop="${t.key}">Arrêter</button>`:'')}
-    </div>`).join('');
+  box.innerHTML=list.map(x=>`<div class="tchip ${x.due?'due':''}">⏱ <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.label)}</span>
+    <b>${x.due?'ÉCHU':fmtDur((x.endAt-now)/1000)}</b>${x.due?`<button class="x" data-ack="${esc(x.key)}">${x.repeat?'Fait, relancer':'OK'}</button>`:(x.repeat?`<button class="x" data-stop="${esc(x.key)}">Arrêter</button>`:'')}</div>`).join('');
 }
-function ensureAudio(){ try{ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }catch(e){} }
-function beep(){
-  try{ ensureAudio(); if(!audioCtx) return; const t0=audioCtx.currentTime;
-    for(let k=0;k<3;k++){ const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='square'; o.frequency.value=880;
-      g.gain.setValueAtTime(.0001,t0+k*.45); g.gain.exponentialRampToValueAtTime(.3,t0+k*.45+.02); g.gain.exponentialRampToValueAtTime(.0001,t0+k*.45+.3);
-      o.connect(g).connect(audioCtx.destination); o.start(t0+k*.45); o.stop(t0+k*.45+.32); } }catch(e){}
-}
-function askNotif(){ try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){} }
-async function alarm(label, title){
-  beep(); try{ navigator.vibrate && navigator.vibrate([400,200,400,200,600]); }catch(e){}
-  toast(`⏱ ${title} : ${label}`, 6000);
-  try{
-    if('Notification' in window && Notification.permission==='granted' && navigator.serviceWorker){
-      const reg = await navigator.serviceWorker.getRegistration();
-      if(reg) reg.showNotification(title, {body:label, tag:'j3d-'+label, renotify:true, icon:'icons/icon-192.png', vibrate:[400,200,400]});
-    }
-  }catch(e){}
-}
+function ensureAudio(){try{if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){}}
+function beep(){try{ensureAudio();if(!audioCtx)return;const t0=audioCtx.currentTime;for(let k=0;k<3;k++){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='square';o.frequency.value=880;g.gain.setValueAtTime(.0001,t0+k*.45);g.gain.exponentialRampToValueAtTime(.3,t0+k*.45+.02);g.gain.exponentialRampToValueAtTime(.0001,t0+k*.45+.3);o.connect(g).connect(audioCtx.destination);o.start(t0+k*.45);o.stop(t0+k*.45+.32);}}catch(e){}}
+function askNotif(){try{if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();}catch(e){}}
+async function alarm(label,title){beep();try{navigator.vibrate&&navigator.vibrate([400,200,400,200,600]);}catch(e){}toast(`⏱ ${title} : ${label}`,6000);
+  try{if('Notification'in window&&Notification.permission==='granted'&&navigator.serviceWorker){const reg=await navigator.serviceWorker.getRegistration();if(reg)reg.showNotification(title,{body:label,tag:'j3d-'+label,renotify:true,icon:'icons/icon-192.png',vibrate:[400,200,400]});}}catch(e){}}
+async function requestWake(){try{if('wakeLock'in navigator&&document.visibilityState==='visible')wakeLock=await navigator.wakeLock.request('screen');}catch(e){}}
+function releaseWake(){try{wakeLock&&wakeLock.release();wakeLock=null;}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&CID){requestWake();tick();heartbeat();}});
 
-/* ============================================================
-   Écran allumé pendant l'intervention
-   ============================================================ */
-async function requestWake(){ try{ if('wakeLock' in navigator && document.visibilityState==='visible') wakeLock = await navigator.wakeLock.request('screen'); }catch(e){} }
-function releaseWake(){ try{ wakeLock && wakeLock.release(); wakeLock=null; }catch(e){} }
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && CUR){ requestWake(); tick(); } });
-
-/* ============================================================
+/* =====================================================================
    Rendu
-   ============================================================ */
+   ===================================================================== */
 function go(v){ view=v; uiState={}; render(); window.scrollTo(0,0); }
 function setBar(html){ const b=$('#bar'); if(html){ $('#barInner').innerHTML=html; b.hidden=false; } else { b.hidden=true; $('#barInner').innerHTML=''; }
-  document.body.style.paddingBottom = (b.hidden? 24 : b.offsetHeight+24)+'px'; }
-function header(title, sub, prog){
-  $('#hTitle').textContent=title; $('#hSub').textContent=sub||'';
-  const pg=$('#hProg'); if(prog==null){ pg.hidden=true; } else { pg.hidden=false; pg.firstElementChild.style.width=(prog*100).toFixed(1)+'%'; }
+  document.body.style.paddingBottom=(b.hidden?24:b.offsetHeight+24)+'px'; }
+function header(title,sub,prog){ $('#hTitle').textContent=title; $('#hSub').textContent=sub||''; const pg=$('#hProg'); if(prog==null) pg.hidden=true; else { pg.hidden=false; pg.firstElementChild.style.width=(prog*100).toFixed(1)+'%'; } renderSync(); }
+function renderSync(){
+  const el=$('#sync'); el.hidden=false; el.className='sync';
+  if(S.kind==='local'){ el.textContent='Local'; return; }
+  if(!navigator.onLine){ el.textContent='Hors ligne'; el.classList.add('off'); return; }
+  if(META.pending){ el.textContent='Synchro…'; el.classList.add('pend'); return; }
+  el.textContent='● En ligne';
 }
 function render(){
   renderTimers();
-  ({home:renderHome, step:renderStep, phases:renderPhases, journal:renderJournal, report:renderReport, browse:renderBrowse, archives:renderArchives}[view]||renderHome)();
+  if(['board','step','journal','report'].includes(view) && (!CH||!CHP)){ header('Chargement…','',null); $('#app').innerHTML='<div class="card muted">Connexion au chantier…</div>'; setBar(''); return; }
+  ({home:renderHome,board:renderBoard,step:renderStep,journal:renderJournal,report:renderReport,browse:renderBrowse,archives:renderArchives,phases:renderLevels}[view]||renderHome)();
 }
 
 /* ---------- Accueil ---------- */
 function renderHome(){
-  const m=PUB.parsed.meta;
+  const m=PUB.parsed.meta, w=PUB.parsed.warnings;
   header('J3D Procédures', m.procedure||'', null);
-  const w=PUB.parsed.warnings;
-  const newer = CUR && PUB.parsed.meta.version && PUB.parsed.meta.version!==CUR.procVersion;
+  const open=LIST.filter(c=>!c.closedAt).sort((a,b)=>b.createdAt-a.createdAt);
   let h='';
-  if(CUR){
-    const done=Object.keys(CUR.results).length;
-    h+=`<div class="card"><h3>Intervention en cours</h3>
-      <dl class="kv"><dt>Chantier</dt><dd>${esc(CUR.chantier)}</dd><dt>Opérateur</dt><dd>${esc(CUR.operateur)}</dd>
-      <dt>Début</dt><dd>${fmtD(CUR.startedAt)} ${fmtT(CUR.startedAt)}</dd><dt>Procédure</dt><dd>v${esc(CUR.procVersion)} (verrouillée)</dd>
-      <dt>Avancement</dt><dd>${done} / ${P.flat.length} étapes</dd></dl>
-      ${newer?`<div class="banner" style="margin-top:10px">Une version plus récente (v${esc(PUB.parsed.meta.version)}) est disponible. Elle sera utilisée à la prochaine intervention.</div>`:''}
-      <button class="btn primary" data-act="resume">Reprendre (étape ${esc(stepAt(CUR.pos)?.step.num||'')})</button>
-      <div class="btnrow"><button class="btn" data-act="phases">Sommaire</button><button class="btn" data-act="journal">Journal</button></div>
-    </div>`;
-  } else {
-    h+=`<div class="card"><h3>Nouvelle intervention</h3>
-      <label class="fld" for="fChantier">Chantier</label><input class="inp" id="fChantier" placeholder="Nom / adresse du chantier">
-      <label class="fld" for="fOp">Opérateur</label><input class="inp" id="fOp" value="${esc(store.get(K.op,''))}" placeholder="Nom">
-      <button class="btn primary" data-act="start" ${PUB.parsed.flat.length?'':'disabled'}>Démarrer la procédure</button>
-    </div>`;
+  h+=`<div class="card"><h3>Opérateur</h3>${USER?`<div class="btnrow" style="align-items:center"><div style="flex:1;font-size:18px;font-weight:700">👷 ${esc(USER)}</div><button class="btn sm ghost" data-act="chuser">Changer</button></div>`:
+    `<label class="fld" for="fUser">Votre nom (affiché aux autres opérateurs)</label><input class="inp" id="fUser" autocomplete="name"><button class="btn primary" data-act="setuser">Valider</button>`}
+    <div class="small muted" style="margin-top:6px">Stockage : <b>${esc(S.label)}</b>${S.kind==='local'?' – pas de partage entre téléphones (firebase-config.json absent)':''}</div></div>`;
+  if(USER){
+    h+=`<div class="card"><h3>Chantiers en cours</h3>${open.length? `<div class="list">${open.map(c=>{const n=Object.values(c.tasks||{}).filter(x=>x.status==='terminée').length;
+        return `<button class="li" data-open="${esc(c.id)}"><span style="font-size:22px">🏗</span><span style="flex:1"><b>${esc(c.name)}</b><br><span class="small muted">${fmtD(c.createdAt)} · par ${esc(c.createdBy||'?')} · ${n} tâche(s) terminée(s)</span></span><span>›</span></button>`;}).join('')}</div>` : '<div class="muted small">Aucun chantier en cours.</div>'}
+      <label class="fld" for="fChantier">Nouveau chantier</label><input class="inp" id="fChantier" placeholder="Nom / adresse du chantier">
+      <button class="btn primary" data-act="create" ${PUB.parsed.tasks.length?'':'disabled'}>Créer le chantier</button></div>`;
   }
-  if(PUB.missing) h+=`<div class="note bad">⚠ ${esc(MD_URL)} introuvable sur le serveur (erreur 404). L’appli utilise sa copie intégrée : vos modifications du fichier MD ne sont pas prises en compte.<br><span class="small">Sur GitHub Pages : vérifier la présence du fichier vide <b>.nojekyll</b> à la racine du dépôt et l’orthographe exacte du nom de fichier.</span></div>`;
-  h+=`<div class="card"><h3>Procédure</h3>
-    <dl class="kv"><dt>Titre</dt><dd>${esc(m.procedure||'—')}</dd><dt>Version</dt><dd>${esc(m.version||'—')} ${m.statut?`<span class="muted small">(${esc(m.statut)})</span>`:''}</dd>
-    <dt>Date</dt><dd>${esc(m.date||'—')}</dd><dt>Source</dt><dd>${esc(PUB.source)}</dd>
-    <dt>Contenu</dt><dd>${PUB.parsed.phases.length} phases, ${PUB.parsed.flat.length} étapes</dd></dl>
+  if(PUB.missing) h+=`<div class="note bad">⚠ ${esc(MD_URL)} introuvable sur le serveur (erreur 404). L’appli utilise sa copie intégrée : vos modifications du fichier MD ne sont pas prises en compte.</div>`;
+  h+=`<div class="card"><h3>Procédure</h3><dl class="kv"><dt>Titre</dt><dd>${esc(m.procedure||'—')}</dd><dt>Version</dt><dd>${esc(m.version||'—')} ${m.statut?`<span class="muted small">(${esc(m.statut)})</span>`:''}</dd>
+    <dt>Date</dt><dd>${esc(m.date||'—')}</dd><dt>Source</dt><dd>${esc(PUB.source)}</dd><dt>Contenu</dt><dd>${PUB.parsed.tasks.length} tâches, ${PUB.parsed.flat.length} étapes</dd></dl>
     ${w.length?`<details style="margin-top:8px"><summary>⚠ ${w.length} remarque(s) sur le fichier</summary><div class="small">${w.map(x=>`<div>${x.line?`ligne ${x.line} : `:''}${esc(x.msg)}</div>`).join('')}</div></details>`:'<div class="note ok small" style="margin-top:10px">Fichier conforme aux conventions</div>'}
-    <button class="btn" data-act="browse">Consulter la procédure</button>
+    <div class="btnrow"><button class="btn" data-act="browse">Consulter</button><button class="btn" data-act="levels">Séquencement</button></div>
     <label class="btn ghost" style="text-align:center;line-height:34px">Charger un fichier .md<input type="file" id="fileMd" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden></label>
-    ${store.get(K.local)?`<button class="btn ghost" data-act="unlocal">Revenir à la procédure publiée</button>`:''}
-  </div>
-  <div class="card"><h3>Archives</h3>
-    <button class="btn ghost" data-act="archives">Interventions clôturées (${store.get(K.arch,[]).length})</button>
-    ${deferredInstall?'<button class="btn" data-act="install">Installer l’appli sur le téléphone</button>':''}
-  </div>`;
+    ${store.get(K.local)?`<button class="btn ghost" data-act="unlocal">Revenir à la procédure publiée</button>`:''}</div>
+  <div class="card"><button class="btn ghost" data-act="archives">Chantiers clôturés (${LIST.filter(c=>c.closedAt).length})</button>
+    ${deferredInstall?'<button class="btn" data-act="install">Installer l’appli sur le téléphone</button>':''}</div>`;
   $('#app').innerHTML=h; setBar('');
 }
 
+/* ---------- Tableau du chantier ---------- */
+function taskCard(t,st){
+  const s=TS(t.id), ops=s.ops||[], n=doneCount(t), N=t.steps.length;
+  const lvl=t.debut===t.fin?`niv. ${t.debut}`:`niv. ${t.debut}→${t.fin}`;
+  let acts='';
+  if(st==='mine') acts=`<button class="btn sm primary" data-cont="${t.id}">Continuer ›</button>`;
+  else if(st==='free') acts=`<button class="btn sm primary" data-take="${t.id}">Je prends</button>`;
+  else if(st==='shared') acts=`<button class="btn sm" data-take="${t.id}">Rejoindre</button>`;
+  else if(st==='done') acts=`<button class="btn sm ghost" data-reopen="${t.id}">Rouvrir</button>`;
+  return `<div class="task ${st==='mine'?'mine':''} ${st==='done'?'done':''}">
+    <div class="tt">${st==='done'?'✓ ':''}${esc(t.title)}</div>
+    <div class="meta"><span class="lvl">${lvl}</span>${t.role?`<span>${esc(t.role)}</span>`:''}<span>${n}/${N} étape${N>1?'s':''}</span>${t.ops>1?`<span>👥 ${ops.length}/${t.ops}</span>`:''}
+      ${ops.length?`<span class="who">👷 ${ops.map(esc).join(', ')}</span>`:''}${st==='done'&&s.doneAt?`<span>fini ${fmtT(s.doneAt)}</span>`:''}</div>
+    ${n&&st!=='done'?`<div class="bar"><i style="width:${(n/N*100).toFixed(0)}%"></i></div>`:''}
+    ${acts?`<div class="acts">${acts}</div>`:''}</div>`;
+}
+function renderBoard(){
+  const tasks=CHP.tasks, by={mine:[],free:[],shared:[],full:[],done:[],locked:[]};
+  tasks.forEach(t=>by[taskState(t)].push(t));
+  const done=by.done.length, lv=levelInfo();
+  header(CH.name, CH.closedAt?'Clôturé':(lv?`Niveaux ouverts jusqu’à ${lv} · ${done}/${tasks.length} tâches`:'Toutes les tâches sont terminées'), done/tasks.length);
+  const now=Date.now(), online=Object.entries(CH.users||{}).filter(([n,ts])=>now-ts<3*60000).map(([n])=>n);
+  let h=`<div class="small muted" style="margin-bottom:6px">👥 Connectés : <b>${online.length?online.map(esc).join(', '):'—'}</b></div>`;
+  if(!lv) h+=`<div class="note ok">Toutes les tâches sont terminées. Pensez à clôturer le chantier et à exporter le journal.</div>`;
+  if(by.mine.length) h+=`<div class="sec">Mes tâches</div>`+by.mine.map(t=>taskCard(t,'mine')).join('');
+  if(by.free.length||by.shared.length) h+=`<div class="sec">Disponibles</div>`+[...by.free.map(t=>taskCard(t,'free')),...by.shared.map(t=>taskCard(t,'shared'))].join('');
+  if(by.full.length) h+=`<div class="sec">En cours par d’autres</div>`+by.full.map(t=>taskCard(t,'full')).join('');
+  if(!by.mine.length&&!by.free.length&&!by.shared.length&&lv) h+=`<div class="note">Aucune tâche disponible pour vous : attendez la fin des tâches en cours.</div>`;
+  if(by.locked.length) h+=`<details class="card" style="margin-top:14px"><summary>À venir : ${by.locked.length} tâche(s)</summary><div class="small">${by.locked.map(t=>`<div style="padding:6px 0;border-bottom:1px solid var(--line)"><span class="lvl">niv. ${t.debut}</span> ${esc(t.title)}</div>`).join('')}</div></details>`;
+  if(by.done.length) h+=`<details style="margin-top:6px"><summary class="sec" style="display:list-item">Terminées (${by.done.length})</summary>${by.done.map(t=>taskCard(t,'done')).join('')}</details>`;
+  $('#app').innerHTML=h;
+  setBar(`<div class="btnrow"><button class="btn" data-act="journal">Journal</button><button class="btn" data-act="levels">Séquencement</button></div>`);
+}
+
 /* ---------- Écran d'étape ---------- */
-function stepBody(f, ro){
-  const s=f.step, p=f.phase, firstOfPhase = f.s===0;
-  let h=`<div class="phasehead"><span><b>${esc(p.name)}</b></span>
-    ${(s.role||p.role)?`<span>Rôle : <b>${esc(s.role||p.role)}</b></span>`:''}
-    ${(s.operateurs||p.operateurs)?`<span>👥 <b>${esc(s.operateurs||p.operateurs)}</b></span>`:''}
-    ${(firstOfPhase && p.dureeTxt)?`<span>⏱ phase ≈ <b>${esc(p.dureeTxt)}</b></span>`:''}</div>`;
-  if(firstOfPhase){ p.text.forEach(t=>h+=`<div class="note small">${inl(t)}</div>`); p.notes.forEach(n=>h+=`<div class="note">${inl(n)}</div>`); }
+function stepBody(f,ro,t){
+  const s=f.step,p=f.phase,first=t? t.steps[0]===f : f.s===0;
+  let h=`<div class="phasehead"><span><b>${esc(t?t.title:p.name)}</b></span>${(s.role||p.role)?`<span>Rôle : <b>${esc(s.role||p.role)}</b></span>`:''}
+    ${(s.operateurs||p.operateurs)?`<span>👥 <b>${esc(s.operateurs||p.operateurs)}</b></span>`:''}${(first&&p.dureeTxt)?`<span>⏱ ≈ <b>${esc(p.dureeTxt)}</b></span>`:''}</div>`;
+  if(first){ p.text.forEach(x=>h+=`<div class="note small">${inl(x)}</div>`); p.notes.forEach(n=>h+=`<div class="note">${inl(n)}</div>`); }
   h+=`<div class="card"><div style="margin-bottom:8px"><span class="badge b-${s.type}">${esc(s.type)}</span></div>
-    <h2><span class="stepnum">${esc(s.num)}</span>${inl(s.title)}</h2>
-    <div class="text">${s.text.map(t=>`<p>${inl(t)}</p>`).join('')}</div>
+    <h2><span class="stepnum">${esc(s.num)}</span>${inl(s.title)}</h2><div class="text">${s.text.map(x=>`<p>${inl(x)}</p>`).join('')}</div>
     ${s.images.map(im=>`<figure><img src="${esc(im.src)}" alt="${esc(im.alt)}" loading="lazy" data-zoom>${im.alt?`<figcaption>${esc(im.alt)}</figcaption>`:''}</figure>`).join('')}
     ${s.notes.map(n=>`<div class="note warn">${inl(n)}</div>`).join('')}`;
-  if(s.plage){
-    const pl=s.plage, tgt = `${pl.min===pl.max?'Cible':'Plage'} : <b>${esc(plageTxt(pl))}</b>`;
-    h+=`<div class="target">${tgt}</div>`;
-  }
-  // consignes conditionnelles affichées en information quand le type ne les déclenche pas
-  if(s.siHors && s.type!=='valeur') h+=`<div class="note warn small">Si hors plage : ${inl(s.siHors)}</div>`;
-  if(s.siNon && s.type!=='contrôle') h+=`<div class="note warn small">Si non : ${inl(s.siNon)}</div>`;
+  if(s.plage) h+=`<div class="target">${s.plage.min===s.plage.max?'Cible':'Plage'} : <b>${esc(plageTxt(s.plage))}</b></div>`;
+  if(s.siHors&&s.type!=='valeur') h+=`<div class="note warn small">Si hors plage : ${inl(s.siHors)}</div>`;
+  if(s.siNon&&s.type!=='contrôle') h+=`<div class="note warn small">Si non : ${inl(s.siNon)}</div>`;
   if(s.type==='minuterie') h+=`<div class="target">Durée : <b>${esc(s.dureeTxt||fmtDur(s.duree||0))}</b>${s.repeat?' – alerte périodique':''}</div>`;
-  if(s.type==='checklist' && ro) h+=`<div>${s.items.map(it=>`<div class="check"><span>☐</span><span>${inl(it)}</span></div>`).join('')}</div>`;
-  h+=`</div>`;
-  return h;
+  if(s.type==='checklist'&&ro) h+=`<div>${s.items.map(it=>`<div class="check"><span>☐</span><span>${inl(it)}</span></div>`).join('')}</div>`;
+  return h+`</div>`;
 }
+function curTask(){ return CHP&&CHP.tasks.find(x=>x.id===curTid); }
 function renderStep(){
-  if(!CUR){ go('home'); return; }
-  const f=stepAt(CUR.pos); if(!f){ go('journal'); return; }
-  const s=f.step, res=CUR.results[f.key];
-  header(`${s.num} ${s.title}`, `${CUR.chantier} · étape ${CUR.pos+1}/${P.flat.length}`, (CUR.pos)/(P.flat.length));
-  let h = stepBody(f,false);
-  const u=uiState;
-  if(res) h+=`<div class="note ${res.status==='ok'?'ok':'warn'} small">Déjà validée à ${fmtT(res.at)}${res.value!==''?` – valeur ${esc(res.value)}`:''}${res.comment?` – « ${esc(res.comment)} »`:''}. Vous pouvez la refaire.</div>`;
-
-  // zones spécifiques au type
-  if(s.type==='checklist'){
-    u.checks = u.checks || (res && res.checks) || s.items.map(()=>false);
-    h+=`<div class="card">${s.items.map((it,k)=>`<label class="check"><input type="checkbox" data-chk="${k}" ${u.checks[k]?'checked':''}><span>${inl(it)}</span></label>`).join('')}</div>`;
-  }
-  if(s.type==='valeur'){
-    h+=`<div class="card"><label class="fld" for="fVal">Valeur mesurée</label>
-      <div class="valrow"><input class="inp" id="fVal" inputmode="decimal" autocomplete="off" value="${esc(u.val??'')}"><span class="unit">${esc(s.plage?.unit||'')}</span></div></div>`;
-  }
-  if(s.type==='minuterie'){
-    const t=CUR.timers.find(x=>x.key===f.key);
-    if(t) h+=`<div class="card"><div class="countdown" id="cd" data-key="${f.key}">${t.due||t.acked?'00:00':fmtDur((t.endAt-Date.now())/1000)}</div>
-      ${t.due?'<div class="note bad">Temps écoulé</div>':''}</div>`;
-  }
-  if(u.problem){
-    h+=`<div class="note bad">${inl(u.problem)}</div>`;
-  }
-  if(u.needComment || s.type!=='info'){
-    const req = u.needComment && s.commentReq;
-    h+=`<label class="fld" for="fCom">${u.needComment? (req?'Commentaire (obligatoire)':'Commentaire sur l’anomalie (facultatif)') : 'Remarque (facultatif)'}</label>
-      <textarea class="inp" id="fCom" placeholder="${u.needComment?'Décrire l’anomalie / la décision':'…'}">${esc(u.com??'')}</textarea>`;
-  }
-  $('#app').innerHTML=h;
-  setBar(stepActions(f));
+  const t=curTask(); if(!t){ go('board'); return; }
+  const st=taskState(t);
+  if(st!=='mine'){ curTid=null; go('board'); return; }
+  const pos=taskPos(t), f=t.steps[pos], s=f.step, res=(TS(t.id).results||{})[f.key], u=uiState;
+  const others=(TS(t.id).ops||[]).filter(x=>x!==USER);
+  header(`${s.num} ${s.title}`, `${t.title} · étape ${pos+1}/${t.steps.length}`, pos/t.steps.length);
+  let h='';
+  if(others.length) h+=`<div class="note small">👥 Tâche partagée avec <b>${others.map(esc).join(', ')}</b> – l’avancement est commun.</div>`;
+  h+=stepBody(f,false,t);
+  if(res) h+=`<div class="note ${res.status==='ok'?'ok':'warn'} small">Déjà validée par ${esc(res.by||'?')} à ${fmtT(res.at)}${res.value!==''?` – valeur ${esc(res.value)}`:''}${res.comment?` – « ${esc(res.comment)} »`:''}.</div>`;
+  if(s.type==='checklist'){ u.checks=u.checks||(res&&res.checks)||s.items.map(()=>false);
+    h+=`<div class="card">${s.items.map((it,k)=>`<label class="check"><input type="checkbox" data-chk="${k}" ${u.checks[k]?'checked':''}><span>${inl(it)}</span></label>`).join('')}</div>`; }
+  if(s.type==='valeur') h+=`<div class="card"><label class="fld" for="fVal">Valeur mesurée</label><div class="valrow"><input class="inp" id="fVal" inputmode="decimal" autocomplete="off" value="${esc(u.val??'')}"><span class="unit">${esc(s.plage?.unit||'')}</span></div></div>`;
+  if(s.type==='minuterie'){ const x=timerOf(t,f); if(x) h+=`<div class="card"><div class="countdown" id="cd" data-key="${esc(x.key)}">${x.due||x.acked?'00:00':fmtDur((x.endAt-Date.now())/1000)}</div>${x.due?'<div class="note bad">Temps écoulé</div>':''}</div>`; }
+  if(u.problem) h+=`<div class="note bad">${inl(u.problem)}</div>`;
+  if(u.needComment||s.type!=='info'){ const req=u.needComment&&s.commentReq;
+    h+=`<label class="fld" for="fCom">${u.needComment?(req?'Commentaire (obligatoire)':'Commentaire sur l’anomalie (facultatif)'):'Remarque (facultatif)'}</label><textarea class="inp" id="fCom" placeholder="…">${esc(u.com??'')}</textarea>`; }
+  h+=`<div class="btnrow noprint" style="margin-top:14px"><button class="btn ghost sm" data-act="board">‹ Tableau</button><button class="btn ghost sm" data-act="release">Relâcher la tâche</button></div>`;
+  $('#app').innerHTML=h; setBar(stepActions(t,f));
 }
-function stepActions(f){
-  const s=f.step, u=uiState, prev = CUR.pos>0 ? `<button class="btn ghost" data-act="prev" style="flex:0 0 30%">‹ Préc.</button>` : '';
+function stepActions(t,f){
+  const s=f.step,u=uiState,pos=taskPos(t),prev=pos>0?`<button class="btn ghost" data-act="prev" style="flex:0 0 30%">‹ Préc.</button>`:'';
   let main='';
-  if(u.forceMode){
-    main=`<button class="btn bad" data-act="force">Consigner l’anomalie et continuer</button>`;
-    return `<div class="btnrow">${prev}<button class="btn" data-act="retry">Corriger / refaire</button></div>${main}`;
-  }
+  if(u.forceMode) return `<div class="btnrow">${prev}<button class="btn" data-act="retry">Corriger / refaire</button></div><button class="btn bad" data-act="force">Consigner l’anomalie et continuer</button>`;
   switch(s.type){
     case 'action': main=`<button class="btn ok" data-act="done">✓ Fait</button>`; break;
     case 'info': main=`<button class="btn primary" data-act="done">Suivant ›</button>`; break;
     case 'avertissement': main=`<button class="btn primary" data-act="done">⚠ Lu et compris</button>`; break;
     case 'contrôle': return `<div class="btnrow">${prev}<button class="btn bad" data-act="no">✗ Non</button><button class="btn ok" data-act="yes">✓ Oui</button></div>`;
     case 'valeur': main=`<button class="btn primary" data-act="val">Valider la valeur</button>`; break;
-    case 'checklist': {
-      const all = (u.checks||[]).every(Boolean);
-      main = all? `<button class="btn ok" data-act="chk">✓ Tout est coché</button>` : `<button class="btn" data-act="chkpart">Valider incomplet…</button>`;
-      break; }
-    case 'minuterie': {
-      const t=CUR.timers.find(x=>x.key===f.key);
-      if(!t) main=`<button class="btn primary" data-act="tstart">▶ Démarrer (${esc(s.dureeTxt||fmtDur(s.duree||0))})</button>`;
+    case 'checklist': main=(u.checks||[]).every(Boolean)?`<button class="btn ok" data-act="chk">✓ Tout est coché</button>`:`<button class="btn" data-act="chkpart">Valider incomplet…</button>`; break;
+    case 'minuterie': { const x=timerOf(t,f);
+      if(!x) main=`<button class="btn primary" data-act="tstart">▶ Démarrer (${esc(s.dureeTxt||fmtDur(s.duree||0))})</button>`;
       else if(s.repeat) main=`<button class="btn ok" data-act="done">Continuer ›</button>`;
-      else if(t.due||t.acked) main=`<button class="btn ok" data-act="tdone">✓ Terminé</button>`;
-      else main= u.early? `<button class="btn bad" data-act="tdone">Confirmer validation anticipée</button>` : `<button class="btn" data-act="tearly">Valider avant la fin…</button>`;
+      else if(x.due||x.acked) main=`<button class="btn ok" data-act="tdone">✓ Terminé</button>`;
+      else main=u.early?`<button class="btn bad" data-act="tdone">Confirmer validation anticipée</button>`:`<button class="btn" data-act="tearly">Valider avant la fin…</button>`;
       break; }
   }
   return `<div class="btnrow">${prev}${main}</div>`;
 }
 
-/* ---------- Sommaire (navigation) ---------- */
-function renderPhases(){
-  if(!CUR){ go('home'); return; }
-  header('Sommaire', `${CUR.chantier} · v${CUR.procVersion}`, Object.keys(CUR.results).length/P.flat.length);
-  let h='<div class="card list">';
-  P.phases.forEach((p,pi)=>{
-    h+=`<div class="phase-sec">${esc(p.name)}</div>`;
-    p.steps.forEach((s,si)=>{
-      const idx=P.flat.findIndex(x=>x.p===pi&&x.s===si), r=CUR.results[`${pi}.${si}`];
-      const cls = r? (r.status==='ok'?'ok':'forced') : (idx===CUR.pos?'cur':'');
-      h+=`<button class="li" data-goto="${idx}"><span class="st ${cls}">${r?(r.status==='ok'?'✓':'!'):(idx===CUR.pos?'›':'')}</span><span><span class="stepnum">${esc(s.num)}</span>${inl(s.title)}</span></button>`;
-    });
+/* ---------- Séquencement (vue Gantt simplifiée) ---------- */
+function renderLevels(){
+  const P = (view==='levels'&&!CHP)? PUB.parsed : (CHP||PUB.parsed);
+  const inCh = !!(CHP && CH && P===CHP);
+  const maxL=Math.max(1,...P.tasks.map(t=>t.fin));
+  header('Séquencement', `${P.tasks.length} tâches · niveaux 1 à ${maxL}`, null);
+  const cell=Math.max(14,Math.min(28,Math.floor((Math.min(window.innerWidth,640)-32-150)/maxL)));
+  let h=`<div class="card" style="overflow-x:auto"><table style="border-collapse:collapse;font-size:13px">
+    <tr><th style="text-align:left;padding:2px 6px">Tâche</th>${Array.from({length:maxL},(_,i)=>`<th style="width:${cell}px;font-weight:600;color:var(--muted)">${i+1}</th>`).join('')}</tr>`;
+  P.tasks.forEach(t=>{
+    const st = inCh? taskState(t) : 'free';
+    const col = st==='done'?'var(--ok)': st==='locked'?'var(--line)': st==='mine'?'var(--mine)':'var(--accent)';
+    h+=`<tr><td style="padding:3px 6px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis">${esc(t.title)}</td>${Array.from({length:maxL},(_,i)=>{const on=i+1>=t.debut&&i+1<=t.fin;return `<td style="border:1px solid var(--line);height:${cell-4}px;background:${on?col:'transparent'}"></td>`;}).join('')}</tr>`;
   });
-  $('#app').innerHTML=h+'</div>';
-  setBar(`<button class="btn primary" data-act="resume">Revenir à l’étape en cours</button>`);
+  h+=`</table>${inCh?`<div class="small muted" style="margin-top:8px">🟩 terminée · 🟧 ouverte · 🟦 la mienne · ⬜ à venir</div>`:''}</div>
+    <div class="note small">Règle : une tâche s’ouvre quand toutes les tâches dont la <b>Fin</b> est inférieure à son <b>Début</b> sont validées.</div>`;
+  $('#app').innerHTML=h; setBar(`<button class="btn" data-act="${inCh?'board':'home'}">‹ Retour</button>`);
 }
 
-/* ---------- Consultation sans intervention ---------- */
+/* ---------- Consultation ---------- */
 function renderBrowse(){
   const PP=PUB.parsed;
-  if(uiState.i==null){
-    header('Consultation', `v${PP.meta.version||'?'} · ${PP.flat.length} étapes`, null);
-    let h='<div class="card list">';
-    PP.phases.forEach((p,pi)=>{ h+=`<div class="phase-sec">${esc(p.name)}</div>`;
+  if(uiState.i==null){ header('Consultation',`v${PP.meta.version||'?'} · ${PP.flat.length} étapes`,null);
+    let h='<div class="card list">'; PP.phases.forEach((p,pi)=>{ h+=`<div class="phase-sec">${esc(p.name)}</div>`;
       p.steps.forEach((s,si)=>{ const idx=PP.flat.findIndex(x=>x.p===pi&&x.s===si); h+=`<button class="li" data-bgo="${idx}"><span class="badge b-${s.type}" style="flex:none">${esc(s.type.slice(0,4))}</span><span><span class="stepnum">${esc(s.num)}</span>${inl(s.title)}</span></button>`; }); });
-    $('#app').innerHTML=h+'</div>'; setBar(`<button class="btn" data-act="home">‹ Accueil</button>`); return;
-  }
-  const f=PP.flat[uiState.i];
-  header(`${f.step.num} ${f.step.title}`, `Consultation · ${uiState.i+1}/${PP.flat.length}`, (uiState.i+1)/PP.flat.length);
+    $('#app').innerHTML=h+'</div>'; setBar(`<button class="btn" data-act="${CID?'board':'home'}">‹ Retour</button>`); return; }
+  const f=PP.flat[uiState.i]; header(`${f.step.num} ${f.step.title}`,`Consultation · ${uiState.i+1}/${PP.flat.length}`,(uiState.i+1)/PP.flat.length);
   $('#app').innerHTML=stepBody(f,true);
   setBar(`<div class="btnrow"><button class="btn" data-act="bprev" ${uiState.i?'':'disabled'}>‹</button><button class="btn" data-act="blist">Liste</button><button class="btn" data-act="bnext" ${uiState.i<PP.flat.length-1?'':'disabled'}>›</button></div>`);
 }
 
-/* ---------- Journal ---------- */
-function statusTag(st){ const m={ok:'ok','forcé':'forced','non conforme':'bad',alerte:'bad'}; return `<span class="tag ${m[st]||''}">${esc(st)}</span>`; }
-function renderJournal(rec){
-  const I = rec || CUR; if(!I){ go('home'); return; }
-  header('Journal', `${I.chantier} · ${I.log.length} entrées`, null);
-  const forced = Object.values(I.results).filter(r=>r.status!=='ok').length;
-  let h=`<div class="card"><dl class="kv"><dt>Chantier</dt><dd>${esc(I.chantier)}</dd><dt>Opérateur</dt><dd>${esc(I.operateur)}</dd>
-    <dt>Procédure</dt><dd>${esc(I.procName)} v${esc(I.procVersion)}</dd><dt>Étapes</dt><dd>${Object.keys(I.results).length} validées${forced?`, <b style="color:var(--warn)">${forced} anomalie(s)</b>`:''}</dd></dl></div>
-    <div class="card log">${I.log.slice().reverse().map(e=>`<div class="e"><div class="h">${fmtD(e.t)} ${fmtT(e.t)} ${statusTag(e.status)}</div>
-      <div>${e.num?`<span class="stepnum">${esc(e.num)}</span>`:''}${esc(e.title)}${e.value!==''?` – <b>${esc(e.value)} ${esc(e.unit)}</b>`:''}</div>
-      ${e.comment?`<div class="muted">« ${esc(e.comment)} »</div>`:''}</div>`).join('')}</div>`;
+/* ---------- Journal / rapport / archives ---------- */
+function statusTag(st){const m={ok:'ok','terminée':'ok','forcé':'forced','non conforme':'bad',alerte:'bad'};return `<span class="tag ${m[st]||''}">${esc(st)}</span>`;}
+function renderJournal(){
+  header('Journal',`${CH.name} · ${LOG.length} entrées`,null);
+  const forced=LOG.filter(e=>e.status==='forcé').length;
+  let h=`<div class="card"><dl class="kv"><dt>Chantier</dt><dd>${esc(CH.name)}</dd><dt>Créé</dt><dd>${fmtD(CH.createdAt)} par ${esc(CH.createdBy||'?')}</dd>
+    <dt>Procédure</dt><dd>${esc(CH.procName)} v${esc(CH.procVersion)}</dd><dt>Tâches</dt><dd>${CHP.tasks.filter(isDone).length}/${CHP.tasks.length} terminées${forced?`, <b style="color:var(--warn)">${forced} anomalie(s)</b>`:''}</dd>
+    ${CH.closedAt?`<dt>Clôture</dt><dd>${fmtD(CH.closedAt)} ${fmtT(CH.closedAt)}</dd>`:''}</dl></div>
+    <div class="card log">${LOG.slice().reverse().map(e=>`<div class="e"><div class="h">${fmtD(e.t)} ${fmtT(e.t)} · 👷 ${esc(e.by||'?')} ${statusTag(e.status)}</div>
+      <div>${e.num?`<span class="stepnum">${esc(e.num)}</span>`:''}${esc(e.title)}${e.value!==''?` – <b>${esc(e.value)} ${esc(e.unit)}</b>`:''}</div>${e.comment?`<div class="muted">« ${esc(e.comment)} »</div>`:''}</div>`).join('')||'<div class="muted">Vide</div>'}</div>`;
   $('#app').innerHTML=h;
   setBar(`<div class="btnrow"><button class="btn" data-act="csv">CSV</button><button class="btn" data-act="report">Rapport PDF</button></div>
-    ${rec?`<button class="btn ghost" data-act="archives">‹ Archives</button>`:`<div class="btnrow"><button class="btn ghost" data-act="resume">‹ Étapes</button><button class="btn bad" data-act="close">Clôturer</button></div>`}`);
+    <div class="btnrow"><button class="btn ghost" data-act="${CH.closedAt?'home':'board'}">‹ ${CH.closedAt?'Accueil':'Tableau'}</button>${CH.closedAt?'':'<button class="btn bad" data-act="close">Clôturer</button>'}</div>`);
 }
-let viewedArchive=null;
 function renderArchives(){
-  header('Archives', '', null);
-  const arch=store.get(K.arch,[]);
-  $('#app').innerHTML = `<div class="card list">${arch.length? arch.map((a,k)=>`<button class="li" data-arch="${k}"><span>📄</span><span><b>${esc(a.chantier)}</b><br><span class="small muted">${fmtD(a.startedAt)} · ${esc(a.operateur)} · v${esc(a.procVersion)}</span></span></button>`).join('') : '<div class="muted">Aucune intervention clôturée.</div>'}</div>`;
+  header('Chantiers clôturés','',null);
+  const arch=LIST.filter(c=>c.closedAt).sort((a,b)=>b.closedAt-a.closedAt);
+  $('#app').innerHTML=`<div class="card list">${arch.length?arch.map(a=>`<button class="li" data-open="${esc(a.id)}"><span>📄</span><span><b>${esc(a.name)}</b><br><span class="small muted">${fmtD(a.createdAt)} → ${fmtD(a.closedAt)} · v${esc(a.procVersion)}</span></span></button>`).join(''):'<div class="muted">Aucun chantier clôturé.</div>'}</div>`;
   setBar(`<button class="btn" data-act="home">‹ Accueil</button>`);
 }
-
-/* ---------- Rapport imprimable ---------- */
 function renderReport(){
-  const I = viewedArchive || CUR; if(!I){ go('home'); return; }
-  header('Rapport', I.chantier, null);
-  const PP = parseMD(I.mdText);
-  let rows='';
-  PP.flat.forEach(f=>{ const r=I.results[f.key];
-    rows+=`<tr><td>${esc(f.step.num)}</td><td>${esc(f.phase.name)}</td><td>${esc(f.step.title)}</td><td>${r?esc(r.status):'—'}</td><td>${r&&r.value!==''?esc(r.value+' '+(f.step.plage?.unit||'')):''}</td><td>${r?fmtT(r.at):''}</td><td>${r?esc(r.comment):''}</td></tr>`; });
-  $('#app').innerHTML = `<div class="card report">
-    <h2>Rapport d’intervention</h2>
-    <p><b>Chantier :</b> ${esc(I.chantier)}<br><b>Opérateur :</b> ${esc(I.operateur)}<br>
-    <b>Début :</b> ${fmtD(I.startedAt)} ${fmtT(I.startedAt)}${I.closedAt?` – <b>Fin :</b> ${fmtD(I.closedAt)} ${fmtT(I.closedAt)}`:''}<br>
-    <b>Procédure :</b> ${esc(I.procName)} – v${esc(I.procVersion)} du ${esc(I.procDate)}</p>
-    <div style="overflow-x:auto"><table><thead><tr><th>N°</th><th>Phase</th><th>Étape</th><th>Résultat</th><th>Valeur</th><th>Heure</th><th>Commentaire</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <h3 style="margin-top:16px">Événements</h3>
-    <table><tbody>${I.log.filter(e=>!e.num).map(e=>`<tr><td>${fmtD(e.t)} ${fmtT(e.t)}</td><td>${esc(e.status)}</td><td>${esc(e.title)}</td><td>${esc(e.comment)}</td></tr>`).join('')}</tbody></table>
-  </div>`;
-  setBar(`<div class="btnrow"><button class="btn" data-act="${viewedArchive?'archj':'journal'}">‹ Retour</button><button class="btn primary" data-act="print">Imprimer / PDF</button></div>`);
+  header('Rapport',CH.name,null);
+  let rows=''; CHP.tasks.forEach(t=>{ const s=TS(t.id); t.steps.forEach(f=>{ const r=(s.results||{})[f.key];
+    rows+=`<tr><td>${esc(t.title)}</td><td>${esc(f.step.num)}</td><td>${esc(f.step.title)}</td><td>${r?esc(r.status):'—'}</td><td>${r&&r.value!==''?esc(r.value+' '+(f.step.plage?.unit||'')):''}</td><td>${r?esc(r.by||''):''}</td><td>${r?fmtT(r.at):''}</td><td>${r?esc(r.comment):''}</td></tr>`; }); });
+  $('#app').innerHTML=`<div class="card report"><h2>Rapport d’intervention</h2>
+    <p><b>Chantier :</b> ${esc(CH.name)}<br><b>Créé :</b> ${fmtD(CH.createdAt)} ${fmtT(CH.createdAt)} par ${esc(CH.createdBy||'?')}${CH.closedAt?`<br><b>Clôturé :</b> ${fmtD(CH.closedAt)} ${fmtT(CH.closedAt)}`:''}<br>
+    <b>Procédure :</b> ${esc(CH.procName)} – v${esc(CH.procVersion)} du ${esc(CH.procDate)}<br><b>Opérateurs :</b> ${Object.keys(CH.users||{}).map(esc).join(', ')}</p>
+    <div style="overflow-x:auto"><table><thead><tr><th>Tâche</th><th>N°</th><th>Étape</th><th>Résultat</th><th>Valeur</th><th>Par</th><th>Heure</th><th>Commentaire</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <h3 style="margin-top:16px">Événements</h3><div style="overflow-x:auto"><table><tbody>${LOG.filter(e=>!e.num).map(e=>`<tr><td>${fmtD(e.t)} ${fmtT(e.t)}</td><td>${esc(e.by||'')}</td><td>${esc(e.status)}</td><td>${esc(e.title)}</td><td>${esc(e.comment)}</td></tr>`).join('')}</tbody></table></div></div>`;
+  setBar(`<div class="btnrow"><button class="btn" data-act="journal">‹ Retour</button><button class="btn primary" data-act="print">Imprimer / PDF</button></div>`);
+}
+function csvOf(){
+  const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const head=['Date','Heure','Opérateur','Tâche','Phase','Étape','Intitulé','Type','Résultat','Valeur','Unité','Commentaire'];
+  const lines=[`${q('Chantier')};${q(CH.name)}`,`${q('Procédure')};${q(CH.procName+' v'+CH.procVersion+' ('+CH.procDate+')')}`,'',head.map(q).join(';')];
+  LOG.forEach(e=>lines.push([fmtD(e.t),fmtT(e.t),e.by,e.task,e.phase,e.num,e.title,e.type,e.status,e.value,e.unit,e.comment].map(q).join(';')));
+  return '﻿'+lines.join('\r\n');
+}
+async function exportCsv(){
+  const name=`journal_J3D_${(CH.name||'chantier').replace(/[^\w-]+/g,'_')}_${fmtD(CH.createdAt).replace(/\//g,'-')}.csv`;
+  const blob=new Blob([csvOf()],{type:'text/csv'});
+  try{ const file=new File([blob],name,{type:'text/csv'}); if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
 }
 
-/* ============================================================
-   Menu ☰
-   ============================================================ */
+/* ---------- Menu ☰ ---------- */
 function openMenu(){
-  const inI = !!CUR;
-  $('#menuSheet').innerHTML = `<h3>J3D Procédures</h3>
+  $('#menuSheet').innerHTML=`<h3>J3D Procédures${USER?` · ${esc(USER)}`:''}</h3>
     <button class="mi" data-menu="home">🏠 Accueil</button>
-    ${inI?`<button class="mi" data-menu="step">▶ Étape en cours</button>
-    <button class="mi" data-menu="phases">☰ Sommaire</button>
-    <button class="mi" data-menu="journal">📋 Journal</button>`:''}
-    <button class="mi" data-menu="browse">📖 Consulter la procédure</button>
-    <hr>
-    <button class="mi" data-menu="reload">🔄 Recharger la procédure (vider le cache)</button>
-    ${inI?`<button class="mi danger" data-menu="abandon">✖ Abandonner l’intervention</button>`:''}
+    ${CID&&CH?`<button class="mi" data-menu="board">📋 Tableau du chantier</button><button class="mi" data-menu="journal">🗒 Journal</button>`:''}
+    <button class="mi" data-menu="levels">📊 Séquencement</button>
+    <button class="mi" data-menu="browse">📖 Consulter la procédure</button><hr>
+    <button class="mi" data-menu="reload">🔄 Recharger (vider le cache)</button>
+    ${CID?`<button class="mi" data-menu="leave">↩ Quitter le chantier (il reste ouvert)</button>`:''}
+    ${CID&&CH&&!CH.closedAt?`<button class="mi danger" data-menu="close">✖ Clôturer le chantier</button>`:''}
     <button class="mi danger" data-menu="quit">⏻ Quitter l’appli</button>
-    <div class="ver">Procédure v${esc((CUR?CUR.procVersion:PUB.parsed.meta.version)||'?')} · source : ${esc(CUR?CUR.procSource:PUB.source)}</div>`;
+    <div class="ver">Procédure v${esc((CH?CH.procVersion:PUB.parsed.meta.version)||'?')} · ${esc(S.label)}</div>`;
   $('#menu').classList.add('open');
 }
 function closeMenu(){ $('#menu').classList.remove('open'); }
 async function menuAction(el){
   const a=el.dataset.menu;
-  if(a==='abandon' && !el.dataset.confirm){ el.dataset.confirm='1'; el.textContent='✖ Confirmer l’abandon (journal archivé)'; return; }
-  if(a==='quit' && CUR && !el.dataset.confirm){ el.dataset.confirm='1'; el.textContent='⏻ Quitter (l’intervention reste enregistrée)'; return; }
-  closeMenu(); viewedArchive=null;
+  if(a==='close'&&!el.dataset.confirm){ el.dataset.confirm='1'; el.textContent='✖ Confirmer la clôture (pour tous)'; return; }
+  closeMenu();
   switch(a){
     case 'home': go('home'); break;
-    case 'step': go('step'); break;
-    case 'phases': go('phases'); break;
+    case 'board': curTid=null; go('board'); break;
     case 'journal': go('journal'); break;
+    case 'levels': go('phases'); break;
     case 'browse': view='browse'; uiState={}; render(); window.scrollTo(0,0); break;
-    case 'abandon': logEvt(null,'abandon','Intervention abandonnée','',''); closeIntervention(); toast('Intervention abandonnée (archivée)'); go('home'); break;
-    case 'reload':
-      try{ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){}
-      try{ const regs=await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r=>r.update())); }catch(e){}
-      location.reload(); break;
-    case 'quit':
-      releaseWake(); save();
-      try{ window.close(); }catch(e){}
-      setTimeout(()=>{ go('home'); toast('Fermer avec le bouton « Applications récentes » d’Android', 4000); }, 300);
-      break;
+    case 'leave': leaveChantier(); break;
+    case 'close': await closeChantier(); go('journal'); break;
+    case 'reload': try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}catch(e){} try{const r=await navigator.serviceWorker.getRegistrations();await Promise.all(r.map(x=>x.update()));}catch(e){} location.reload(); break;
+    case 'quit': releaseWake(); try{window.close();}catch(e){} setTimeout(()=>{go('home');toast('Fermer avec le bouton « Applications récentes » d’Android',4000);},300); break;
   }
 }
 
-/* ============================================================
-   Export
-   ============================================================ */
-function csvOf(I){
-  const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
-  const head=['Date','Heure','Phase','Étape','Intitulé','Type','Résultat','Valeur','Unité','Commentaire'];
-  const lines=[`${q('Chantier')};${q(I.chantier)}`, `${q('Opérateur')};${q(I.operateur)}`, `${q('Procédure')};${q(I.procName+' v'+I.procVersion+' ('+I.procDate+')')}`, '', head.map(q).join(';')];
-  I.log.forEach(e=>lines.push([fmtD(e.t),fmtT(e.t),e.phase,e.num,e.title,e.type,e.status,e.value,e.unit,e.comment].map(q).join(';')));
-  return '﻿'+lines.join('\r\n');
-}
-async function exportCsv(I){
-  const name=`journal_J3D_${(I.chantier||'chantier').replace(/[^\w-]+/g,'_')}_${fmtD(I.startedAt).replace(/\//g,'-')}.csv`;
-  const blob=new Blob([csvOf(I)],{type:'text/csv'});
-  try{
-    const file=new File([blob],name,{type:'text/csv'});
-    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name}); return; }
-  }catch(e){ if(e && e.name==='AbortError') return; }
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
-}
-
-/* ============================================================
-   Gestion des actions
-   ============================================================ */
+/* =====================================================================
+   Événements
+   ===================================================================== */
 function readUi(){ const c=$('#fCom'); if(c) uiState.com=c.value; const v=$('#fVal'); if(v) uiState.val=v.value; }
-document.addEventListener('input', e=>{
-  if(e.target.id==='fCom') uiState.com=e.target.value;
-  if(e.target.id==='fVal') uiState.val=e.target.value;
-});
-document.addEventListener('change', async e=>{
-  if(e.target.dataset.chk!=null){ uiState.checks[+e.target.dataset.chk]=e.target.checked; readUi(); setBar(stepActions(stepAt(CUR.pos))); }
-  if(e.target.id==='fileMd' && e.target.files[0]){
-    const file=e.target.files[0]; const text=await file.text(); const parsed=parseMD(text);
+document.addEventListener('input',e=>{ if(e.target.id==='fCom') uiState.com=e.target.value; if(e.target.id==='fVal') uiState.val=e.target.value; });
+document.addEventListener('change',async e=>{
+  if(e.target.dataset.chk!=null){ uiState.checks[+e.target.dataset.chk]=e.target.checked; readUi(); const t=curTask(); setBar(stepActions(t,t.steps[taskPos(t)])); }
+  if(e.target.id==='fileMd'&&e.target.files[0]){ const file=e.target.files[0],text=await file.text(),parsed=parseMD(text);
     store.set(K.local,{text,name:file.name}); PUB={text,parsed,source:`fichier local (${file.name})`};
-    if(!CUR) P=parsed;
-    toast(`${file.name} chargé : ${parsed.flat.length} étapes${parsed.warnings.length?`, ${parsed.warnings.length} remarque(s)`:''}`,4000); render();
-  }
+    toast(`${file.name} chargé : ${parsed.tasks.length} tâches${parsed.warnings.length?`, ${parsed.warnings.length} remarque(s)`:''} – utilisé pour les nouveaux chantiers`,4500); render(); }
 });
-document.addEventListener('click', async e=>{
+document.addEventListener('click',async e=>{
   const z=e.target.closest('[data-zoom]'); if(z){ const o=$('#zoom'); o.firstElementChild.src=z.src; o.style.display='flex'; return; }
   if(e.target.closest('#zoom')){ $('#zoom').style.display='none'; return; }
-  if(e.target.closest('#btnHome')){ readUi(); openMenu(); return; }
+  if(e.target.closest('#btnMenu')){ readUi(); openMenu(); return; }
   const mi=e.target.closest('[data-menu]'); if(mi){ menuAction(mi); return; }
   if(e.target.id==='menu'){ closeMenu(); return; }
   const ack=e.target.closest('[data-ack]'); if(ack){ ackTimer(ack.dataset.ack); if(view==='step') render(); return; }
   const stp=e.target.closest('[data-stop]'); if(stp){ stopTimer(stp.dataset.stop); return; }
-  const gt=e.target.closest('[data-goto]'); if(gt){ CUR.pos=+gt.dataset.goto; save(); go('step'); return; }
+  const op=e.target.closest('[data-open]'); if(op){ openChantier(op.dataset.open,true); return; }
+  const tk=e.target.closest('[data-take]'); if(tk){ ensureAudio(); takeTask(CHP.tasks.find(x=>x.id===tk.dataset.take)); return; }
+  const ct=e.target.closest('[data-cont]'); if(ct){ curTid=ct.dataset.cont; go('step'); return; }
+  const ro=e.target.closest('[data-reopen]'); if(ro){ if(!ro.dataset.confirm){ ro.dataset.confirm='1'; ro.textContent='Confirmer'; return; } reopenTask(CHP.tasks.find(x=>x.id===ro.dataset.reopen)); return; }
   const bg=e.target.closest('[data-bgo]'); if(bg){ uiState.i=+bg.dataset.bgo; render(); window.scrollTo(0,0); return; }
-  const ar=e.target.closest('[data-arch]'); if(ar){ viewedArchive=store.get(K.arch,[])[+ar.dataset.arch]; view='journal'; renderJournal(viewedArchive); return; }
   const b=e.target.closest('[data-act]'); if(!b) return;
   readUi(); ensureAudio();
-  const act=b.dataset.act, f=CUR&&stepAt(CUR.pos), s=f&&f.step, u=uiState, com=(u.com||'').trim();
+  const act=b.dataset.act, t=curTask(), f=t&&t.steps[taskPos(t)], s=f&&f.step, u=uiState, com=(u.com||'').trim();
   switch(act){
-    case 'start': {
-      const ch=$('#fChantier').value.trim(), op=$('#fOp').value.trim();
-      if(!ch||!op){ toast('Renseigner le chantier et l’opérateur'); return; }
-      askNotif(); startIntervention(ch,op); return; }
-    case 'resume': viewedArchive=null; go('step'); return;
-    case 'home': viewedArchive=null; go('home'); return;
-    case 'phases': go('phases'); return;
-    case 'journal': viewedArchive=null; go('journal'); return;
+    case 'setuser': { const n=$('#fUser').value.trim(); if(!n){ toast('Saisir votre nom'); return; } USER=n; if(!QS_USER) store.set(K.user,n); render(); return; }
+    case 'chuser': USER=''; store.del(K.user); render(); return;
+    case 'create': { const n=$('#fChantier').value.trim(); if(!n){ toast('Nom du chantier ?'); return; } askNotif(); createChantier(n); return; }
+    case 'home': go('home'); return;
+    case 'board': curTid=null; go('board'); return;
+    case 'journal': go('journal'); return;
+    case 'levels': go('phases'); return;
     case 'browse': view='browse'; uiState={}; render(); return;
     case 'blist': uiState.i=null; render(); return;
     case 'bprev': uiState.i--; render(); window.scrollTo(0,0); return;
     case 'bnext': uiState.i++; render(); window.scrollTo(0,0); return;
-    case 'archives': viewedArchive=null; go('archives'); return;
-    case 'archj': view='journal'; renderJournal(viewedArchive); return;
-    case 'unlocal': store.del(K.local); toast('Procédure publiée rétablie'); init(); return;
+    case 'archives': go('archives'); return;
+    case 'unlocal': store.del(K.local); toast('Procédure publiée rétablie'); { const pub=await loadPublished(); PUB={...pub,parsed:parseMD(pub.text)}; } render(); return;
     case 'install': if(deferredInstall){ deferredInstall.prompt(); deferredInstall=null; render(); } return;
-    case 'prev': if(CUR.pos>0){ CUR.pos--; save(); uiState={}; render(); window.scrollTo(0,0);} return;
-    case 'done': record(f,'ok','',com); nextStep(); return;
-    case 'yes': record(f,'ok','oui',com); nextStep(); return;
-    case 'no': u.problem = s.siNon || 'Contrôle non conforme.'; u.forceMode=true; u.needComment=true; u.kind='non'; logEvt(f,'non conforme',s.title,'non',''); save(); render(); return;
-    case 'val': {
-      const v=num(u.val); if(v===null){ toast('Saisir une valeur numérique'); return; }
-      const pl=s.plage; if(!pl || (v>=pl.min && v<=pl.max)){ record(f,'ok',String(v),com); nextStep(); return; }
-      u.problem = `Valeur ${v} ${pl.unit} hors plage (${plageTxt(pl)}). ${s.siHors||''}`; u.forceMode=true; u.needComment=true; u.kind='val'; u.forcedVal=String(v);
-      logEvt(f,'non conforme',s.title,String(v),'hors plage'); save(); render(); return; }
-    case 'chk': record(f,'ok',`${u.checks.length}/${u.checks.length}`,com); CUR.results[f.key].checks=u.checks; save(); nextStep(); return;
+    case 'release': releaseTask(t); return;
+    case 'prev': if(taskPos(t)>0) setPos(t,taskPos(t)-1); return;
+    case 'done': recordStep(t,f,'ok','',com); return;
+    case 'yes': recordStep(t,f,'ok','oui',com); return;
+    case 'no': u.problem=s.siNon||'Contrôle non conforme.'; u.forceMode=true; u.needComment=true; u.kind='non'; logEvt(t,f,'non conforme',s.title,'non',''); render(); return;
+    case 'val': { const v=num(u.val); if(v===null){ toast('Saisir une valeur numérique'); return; } const pl=s.plage;
+      if(!pl||(v>=pl.min&&v<=pl.max)){ recordStep(t,f,'ok',String(v),com); return; }
+      u.problem=`Valeur ${v} ${pl.unit} hors plage (${plageTxt(pl)}). ${s.siHors||''}`; u.forceMode=true; u.needComment=true; u.kind='val'; u.forcedVal=String(v);
+      logEvt(t,f,'non conforme',s.title,String(v),'hors plage'); render(); return; }
+    case 'chk': recordStep(t,f,'ok',`${u.checks.length}/${u.checks.length}`,com,{checks:u.checks}); return;
     case 'chkpart': { const n=u.checks.filter(Boolean).length; u.problem=`Checklist incomplète : ${n}/${u.checks.length} élément(s) coché(s).`; u.forceMode=true; u.needComment=true; u.kind='chk'; render(); return; }
     case 'retry': u.problem=null; u.forceMode=false; u.needComment=false; render(); return;
-    case 'force': {
-      if(!com && s.commentReq){ toast('Commentaire obligatoire pour cette étape'); $('#fCom')?.focus(); return; }
-      const val = u.kind==='val'? u.forcedVal : u.kind==='non'? 'non' : u.kind==='chk'? `${u.checks.filter(Boolean).length}/${u.checks.length}` : '';
-      record(f,'forcé',val,com); if(u.kind==='chk') { CUR.results[f.key].checks=u.checks; save(); } nextStep(); return; }
-    case 'tstart': startTimer(f); render(); return;
-    case 'tearly': u.early=true; setBar(stepActions(f)); return;
-    case 'tdone': { const t=CUR.timers.find(x=>x.key===f.key); const early = t && !t.due && !t.acked;
-      CUR.timers=CUR.timers.filter(x=>x.key!==f.key); record(f, early?'forcé':'ok', '', early? (com||'validée avant la fin de la minuterie') : com); nextStep(); return; }
-    case 'csv': exportCsv(viewedArchive||CUR); return;
+    case 'force': { if(!com&&s.commentReq){ toast('Commentaire obligatoire pour cette étape'); $('#fCom')?.focus(); return; }
+      const val=u.kind==='val'?u.forcedVal:u.kind==='non'?'non':u.kind==='chk'?`${u.checks.filter(Boolean).length}/${u.checks.length}`:'';
+      recordStep(t,f,'forcé',val,com,u.kind==='chk'?{checks:u.checks}:null); return; }
+    case 'tstart': startTimer(t,f); render(); return;
+    case 'tearly': u.early=true; setBar(stepActions(t,f)); return;
+    case 'tdone': { const x=timerOf(t,f), early=x&&!x.due&&!x.acked; if(x) stopTimer(x.key); recordStep(t,f,early?'forcé':'ok','',early?(com||'validée avant la fin de la minuterie'):com); return; }
+    case 'csv': exportCsv(); return;
     case 'report': go('report'); return;
     case 'print': window.print(); return;
-    case 'close': {
-      if(!b.dataset.confirm){ b.dataset.confirm='1'; b.textContent='Confirmer la clôture'; return; }
-      const closed=closeIntervention(); viewedArchive=closed; toast('Intervention clôturée – pensez à exporter',4000); view='journal'; renderJournal(closed); return; }
+    case 'close': { if(!b.dataset.confirm){ b.dataset.confirm='1'; b.textContent='Confirmer (pour tous)'; return; } await closeChantier(); render(); return; }
   }
 });
-
-/* ============================================================
-   Démarrage
-   ============================================================ */
-document.addEventListener('error', e=>{
-  const im=e.target; if(im && im.tagName==='IMG' && im.hasAttribute('data-zoom')){
-    const d=document.createElement('div'); d.className='imgmissing'; d.innerHTML='📷 Image à fournir :<br>'+esc(im.getAttribute('src')); im.replaceWith(d); }
-}, true);
-window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredInstall=e; if(view==='home') render(); });
-if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
-}
-setInterval(tick, 1000);
+document.addEventListener('error',e=>{ const im=e.target; if(im&&im.tagName==='IMG'&&im.hasAttribute('data-zoom')){ const d=document.createElement('div'); d.className='imgmissing'; d.innerHTML='📷 Image à fournir :<br>'+esc(im.getAttribute('src')); im.replaceWith(d); } },true);
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredInstall=e; if(view==='home') render(); });
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+setInterval(tick,1000);
 init();
 </script>
 </body>
