@@ -3,7 +3,7 @@
    - procedure_J3D.md : réseau d'abord (dernière version), cache si hors ligne
    - Images : cache d'abord, téléchargées une fois puis conservées
    Incrémenter VERSION à chaque modification de index.html ou sw.js. */
-const VERSION = 'j3d-v1';
+const VERSION = 'j3d-v2';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'procedure_J3D.md'];
 
 self.addEventListener('install', e => {

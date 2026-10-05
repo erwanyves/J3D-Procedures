@@ -107,6 +107,15 @@ details summary{cursor:pointer;font-weight:650;padding:6px 0}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(110px + env(safe-area-inset-bottom));background:var(--top);color:var(--top-fg);padding:10px 16px;border-radius:12px;z-index:50;max-width:90%;display:none;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 #zoom{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:60;display:none;align-items:center;justify-content:center;padding:10px}
 #zoom img{max-width:100%;max-height:100%;touch-action:pinch-zoom}
+#menu{position:fixed;inset:0;z-index:40;display:none;background:rgba(0,0,0,.45)}
+#menu.open{display:block}
+#menu .sheet{position:absolute;top:0;left:0;bottom:0;width:min(86vw,340px);background:var(--card);padding:calc(16px + env(safe-area-inset-top)) 12px 16px;overflow-y:auto;box-shadow:4px 0 24px rgba(0,0,0,.3)}
+#menu .sheet h3{margin:4px 8px 12px;font-size:16px}
+#menu .mi{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:0;border-radius:10px;padding:14px 10px;font-size:16px;cursor:pointer}
+#menu .mi:active{background:var(--info-bg)}
+#menu .mi.danger{color:var(--bad)}
+#menu hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+#menu .ver{font-size:12px;color:var(--muted);margin:12px 10px 0}
 .banner{background:var(--warn-bg);border:1px solid var(--warn);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:15px}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px}
 .kv dt{color:var(--muted)} .kv dd{margin:0}
@@ -125,7 +134,7 @@ details summary{cursor:pointer;font-weight:650;padding:6px 0}
 <body>
 <header class="top">
   <div class="row">
-    <button class="iconbtn" id="btnHome" aria-label="Accueil">☰</button>
+    <button class="iconbtn" id="btnHome" aria-label="Menu">☰</button>
     <div style="flex:1;min-width:0">
       <h1 id="hTitle">J3D Procédures</h1>
       <div class="sub" id="hSub"></div>
@@ -137,6 +146,7 @@ details summary{cursor:pointer;font-weight:650;padding:6px 0}
 <main id="app"></main>
 <div class="actionbar" id="bar" hidden><div class="inner" id="barInner"></div></div>
 <div id="toast"></div>
+<div id="menu"><div class="sheet" id="menuSheet"></div></div>
 <div id="zoom"><img alt=""></div>
 
 <!-- Copie intégrée de la procédure : utilisée seulement si procedure_J3D.md est inaccessible -->
@@ -161,6 +171,7 @@ CONVENTIONS (lues par l'appli)
     Rôle: <machine | pompe | IHM | chariot | topo>
     Note: <texte affiché en encadré>
     Répéter: oui                     (Type: minuterie → alerte périodique)
+    Commentaire: obligatoire         (commentaire exigé en cas d'anomalie ; facultatif sinon)
   - [ ] élément                      → case à cocher (Type: checklist)
   ![légende](images/xxx.jpg)         → photo / schéma
   Texte libre                        → consigne affichée
@@ -759,6 +770,7 @@ function parseMD(text){
         case 'operateurs': tgt.operateurs=v; break;
         case 'role': tgt.role=v; break;
         case 'note': tgt.notes.push(v); break;
+        case 'commentaire': tgt.commentReq=/oblig/i.test(noAcc(v)); break;
         case 'repeter': tgt.repeat=/^(oui|yes|true|1)/i.test(noAcc(v)); break;
         default: used=false;
       }
@@ -799,13 +811,16 @@ function stepAt(i){ return P && P.flat[i]; }
 async function loadPublished(){
   const local = store.get(K.local);
   if(local && local.text){ return {text:local.text, source:`fichier local (${local.name||'.md'})`}; }
+  let missing=false, offline=false;
   try{
     const r = await fetch(MD_URL, {cache:'no-cache'});
     if(r.ok){ return {text: await r.text(), source:'publiée'}; }
-  }catch(e){}
+    missing = true;
+  }catch(e){ offline=true; }
   const emb = $('#embedded-md').textContent;
-  if(emb && !emb.includes('/*EMBEDDED_MD*/')) return {text:emb, source:'copie intégrée (hors ligne)'};
-  return {text:'', source:'aucune'};
+  const why = missing? 'fichier MD introuvable sur le serveur' : 'hors ligne, fichier non encore en cache';
+  if(emb && !emb.includes('/*EMBEDDED_MD*/')) return {text:emb, source:`copie intégrée (${why})`, missing, offline};
+  return {text:'', source:'aucune', missing, offline};
 }
 async function init(){
   const pub = await loadPublished();
@@ -964,6 +979,7 @@ function renderHome(){
       <button class="btn primary" data-act="start" ${PUB.parsed.flat.length?'':'disabled'}>Démarrer la procédure</button>
     </div>`;
   }
+  if(PUB.missing) h+=`<div class="note bad">⚠ ${esc(MD_URL)} introuvable sur le serveur (erreur 404). L’appli utilise sa copie intégrée : vos modifications du fichier MD ne sont pas prises en compte.<br><span class="small">Sur GitHub Pages : vérifier la présence du fichier vide <b>.nojekyll</b> à la racine du dépôt et l’orthographe exacte du nom de fichier.</span></div>`;
   h+=`<div class="card"><h3>Procédure</h3>
     <dl class="kv"><dt>Titre</dt><dd>${esc(m.procedure||'—')}</dd><dt>Version</dt><dd>${esc(m.version||'—')} ${m.statut?`<span class="muted small">(${esc(m.statut)})</span>`:''}</dd>
     <dt>Date</dt><dd>${esc(m.date||'—')}</dd><dt>Source</dt><dd>${esc(PUB.source)}</dd>
@@ -1029,7 +1045,8 @@ function renderStep(){
     h+=`<div class="note bad">${inl(u.problem)}</div>`;
   }
   if(u.needComment || s.type!=='info'){
-    h+=`<label class="fld" for="fCom">${u.needComment?'Commentaire obligatoire (anomalie)':'Remarque (facultatif)'}</label>
+    const req = u.needComment && s.commentReq;
+    h+=`<label class="fld" for="fCom">${u.needComment? (req?'Commentaire (obligatoire)':'Commentaire sur l’anomalie (facultatif)') : 'Remarque (facultatif)'}</label>
       <textarea class="inp" id="fCom" placeholder="${u.needComment?'Décrire l’anomalie / la décision':'…'}">${esc(u.com??'')}</textarea>`;
   }
   $('#app').innerHTML=h;
@@ -1140,6 +1157,49 @@ function renderReport(){
 }
 
 /* ============================================================
+   Menu ☰
+   ============================================================ */
+function openMenu(){
+  const inI = !!CUR;
+  $('#menuSheet').innerHTML = `<h3>J3D Procédures</h3>
+    <button class="mi" data-menu="home">🏠 Accueil</button>
+    ${inI?`<button class="mi" data-menu="step">▶ Étape en cours</button>
+    <button class="mi" data-menu="phases">☰ Sommaire</button>
+    <button class="mi" data-menu="journal">📋 Journal</button>`:''}
+    <button class="mi" data-menu="browse">📖 Consulter la procédure</button>
+    <hr>
+    <button class="mi" data-menu="reload">🔄 Recharger la procédure (vider le cache)</button>
+    ${inI?`<button class="mi danger" data-menu="abandon">✖ Abandonner l’intervention</button>`:''}
+    <button class="mi danger" data-menu="quit">⏻ Quitter l’appli</button>
+    <div class="ver">Procédure v${esc((CUR?CUR.procVersion:PUB.parsed.meta.version)||'?')} · source : ${esc(CUR?CUR.procSource:PUB.source)}</div>`;
+  $('#menu').classList.add('open');
+}
+function closeMenu(){ $('#menu').classList.remove('open'); }
+async function menuAction(el){
+  const a=el.dataset.menu;
+  if(a==='abandon' && !el.dataset.confirm){ el.dataset.confirm='1'; el.textContent='✖ Confirmer l’abandon (journal archivé)'; return; }
+  if(a==='quit' && CUR && !el.dataset.confirm){ el.dataset.confirm='1'; el.textContent='⏻ Quitter (l’intervention reste enregistrée)'; return; }
+  closeMenu(); viewedArchive=null;
+  switch(a){
+    case 'home': go('home'); break;
+    case 'step': go('step'); break;
+    case 'phases': go('phases'); break;
+    case 'journal': go('journal'); break;
+    case 'browse': view='browse'; uiState={}; render(); window.scrollTo(0,0); break;
+    case 'abandon': logEvt(null,'abandon','Intervention abandonnée','',''); closeIntervention(); toast('Intervention abandonnée (archivée)'); go('home'); break;
+    case 'reload':
+      try{ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){}
+      try{ const regs=await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r=>r.update())); }catch(e){}
+      location.reload(); break;
+    case 'quit':
+      releaseWake(); save();
+      try{ window.close(); }catch(e){}
+      setTimeout(()=>{ go('home'); toast('Fermer avec le bouton « Applications récentes » d’Android', 4000); }, 300);
+      break;
+  }
+}
+
+/* ============================================================
    Export
    ============================================================ */
 function csvOf(I){
@@ -1179,7 +1239,9 @@ document.addEventListener('change', async e=>{
 document.addEventListener('click', async e=>{
   const z=e.target.closest('[data-zoom]'); if(z){ const o=$('#zoom'); o.firstElementChild.src=z.src; o.style.display='flex'; return; }
   if(e.target.closest('#zoom')){ $('#zoom').style.display='none'; return; }
-  if(e.target.closest('#btnHome')){ readUi(); go(CUR && view==='home' ? 'step' : 'home'); return; }
+  if(e.target.closest('#btnHome')){ readUi(); openMenu(); return; }
+  const mi=e.target.closest('[data-menu]'); if(mi){ menuAction(mi); return; }
+  if(e.target.id==='menu'){ closeMenu(); return; }
   const ack=e.target.closest('[data-ack]'); if(ack){ ackTimer(ack.dataset.ack); if(view==='step') render(); return; }
   const stp=e.target.closest('[data-stop]'); if(stp){ stopTimer(stp.dataset.stop); return; }
   const gt=e.target.closest('[data-goto]'); if(gt){ CUR.pos=+gt.dataset.goto; save(); go('step'); return; }
@@ -1218,7 +1280,7 @@ document.addEventListener('click', async e=>{
     case 'chkpart': { const n=u.checks.filter(Boolean).length; u.problem=`Checklist incomplète : ${n}/${u.checks.length} élément(s) coché(s).`; u.forceMode=true; u.needComment=true; u.kind='chk'; render(); return; }
     case 'retry': u.problem=null; u.forceMode=false; u.needComment=false; render(); return;
     case 'force': {
-      if(!com){ toast('Commentaire obligatoire'); $('#fCom')?.focus(); return; }
+      if(!com && s.commentReq){ toast('Commentaire obligatoire pour cette étape'); $('#fCom')?.focus(); return; }
       const val = u.kind==='val'? u.forcedVal : u.kind==='non'? 'non' : u.kind==='chk'? `${u.checks.filter(Boolean).length}/${u.checks.length}` : '';
       record(f,'forcé',val,com); if(u.kind==='chk') { CUR.results[f.key].checks=u.checks; save(); } nextStep(); return; }
     case 'tstart': startTimer(f); render(); return;
