@@ -1038,10 +1038,13 @@ function stepBody(f, ro){
     <div class="text">${s.text.map(t=>`<p>${inl(t)}</p>`).join('')}</div>
     ${s.images.map(im=>`<figure><img src="${esc(im.src)}" alt="${esc(im.alt)}" loading="lazy" data-zoom>${im.alt?`<figcaption>${esc(im.alt)}</figcaption>`:''}</figure>`).join('')}
     ${s.notes.map(n=>`<div class="note warn">${inl(n)}</div>`).join('')}`;
-  if(s.type==='valeur' && s.plage){
+  if(s.plage){
     const pl=s.plage, tgt = `${pl.min===pl.max?'Cible':'Plage'} : <b>${esc(plageTxt(pl))}</b>`;
     h+=`<div class="target">${tgt}</div>`;
   }
+  // consignes conditionnelles affichées en information quand le type ne les déclenche pas
+  if(s.siHors && s.type!=='valeur') h+=`<div class="note warn small">Si hors plage : ${inl(s.siHors)}</div>`;
+  if(s.siNon && s.type!=='contrôle') h+=`<div class="note warn small">Si non : ${inl(s.siNon)}</div>`;
   if(s.type==='minuterie') h+=`<div class="target">Durée : <b>${esc(s.dureeTxt||fmtDur(s.duree||0))}</b>${s.repeat?' – alerte périodique':''}</div>`;
   if(s.type==='checklist' && ro) h+=`<div>${s.items.map(it=>`<div class="check"><span>☐</span><span>${inl(it)}</span></div>`).join('')}</div>`;
   h+=`</div>`;
