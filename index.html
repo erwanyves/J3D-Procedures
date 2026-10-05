@@ -1021,17 +1021,21 @@ async function takeTask(t){
   if(!isOpen(t)){ toast('Tâche pas encore ouverte'); return; }
   const ok=await S.take(CID,t.id,USER,t.ops);
   if(ok===false){ toast(`Tâche complète (${t.ops} opérateur${t.ops>1?'s':''} max)`); return; }
+  // mise à jour locale immédiate (le serveur confirme ensuite)
+  { const s=TS(t.id), ops=s.ops||[]; if(!ops.includes(USER)) setPath(CH,`tasks.${t.id}.ops`,[...ops,USER]); if(!s.status||s.status==='libre') setPath(CH,`tasks.${t.id}.status`,'en cours'); }
   logEvt(t,null,'prise',`Tâche prise : ${t.title}`,'','');
   curTid=t.id; go('step');
 }
 async function releaseTask(t){
   const s=TS(t.id), ops=(s.ops||[]).filter(x=>x!==USER);
   const u={[`tasks.${t.id}.ops`]:S.remove([USER])}; if(!ops.length && s.status!=='terminée') u[`tasks.${t.id}.status`]='libre';
-  await S.update(CID,u); logEvt(t,null,'relâchée',`Tâche relâchée : ${t.title}`,'','');
+  setPath(CH,`tasks.${t.id}.ops`,ops); if(!ops.length && s.status!=='terminée') setPath(CH,`tasks.${t.id}.status`,'libre');
+  S.update(CID,u); logEvt(t,null,'relâchée',`Tâche relâchée : ${t.title}`,'','');
   curTid=null; go('board');
 }
 async function reopenTask(t){
-  await S.update(CID,{[`tasks.${t.id}.status`]:'en cours',[`tasks.${t.id}.doneAt`]:null,[`tasks.${t.id}.ops`]:S.union([USER])});
+  setPath(CH,`tasks.${t.id}.status`,'en cours'); setPath(CH,`tasks.${t.id}.ops`,[...new Set([...(TS(t.id).ops||[]),USER])]);
+  S.update(CID,{[`tasks.${t.id}.status`]:'en cours',[`tasks.${t.id}.doneAt`]:null,[`tasks.${t.id}.ops`]:S.union([USER])});
   logEvt(t,null,'rouverte',`Tâche rouverte : ${t.title}`,'',''); curTid=t.id; go('step');
 }
 async function recordStep(t,f,status,value,comment,extra){
