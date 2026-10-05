@@ -45,7 +45,7 @@ Type: checklist
 - [ ] 4 plaques sous patin
 - [ ] Big bag + support pour purges de démarrage et de fin
 
-## 1.2 Accessoires et outillage
+## 1.2 Point accessoires et outillage
 Type: checklist
 <!-- À COMPLÉTER : liste outillage -->
 - [ ] Tuyau d'eau 25 m
