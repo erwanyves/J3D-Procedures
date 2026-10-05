@@ -1,0 +1,16 @@
+{
+  "name": "J3D Procédures",
+  "short_name": "J3D",
+  "description": "Guidage opérateur pas à pas – imprimante béton J3D",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1f2a33",
+  "theme_color": "#1f2a33",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
