@@ -32,7 +32,7 @@ CONVENTIONS (lues par l'appli)
 ## 1.1 Matériel à acheminer
 Type: checklist
 <!-- À COMPLÉTER : listing complet -->
-- [ ] Container machine (sur Ampliroll) : pompe
+- [ ] Container machine : pompe
 - [ ] Container machine : trémie
 - [ ] Container machine : imprimante
 - [ ] Container machine : compresseur
@@ -120,19 +120,19 @@ Placer les plaques de répartition sous les patins.
 ![Plaques sous patin](images/station_05_plaques_patin.jpg)
 
 ## 4.6 Nivelage
-Type: valeur
-Plage: 0..13 cm
+Type: Action
+Plage: de 0..13 cm
 Si hors plage: repositionner la machine
 
 ## 4.7 Lever l'imprimante
-Type: valeur
+Type: Action
 Chenilles à 48 cm du sol.
 Plage: 48..48 cm
 
 ## 4.8 Mise à niveau de la machine
 Type: contrôle
 La machine est-elle de niveau ?
-Si non: reprendre le réglage des patins
+Si non: reprendre le réglage des patins. Ne jamais régler en descente
 
 
 # Phase : Déploiement du bras
