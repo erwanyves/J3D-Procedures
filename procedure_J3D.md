@@ -1,6 +1,6 @@
 ---
 procedure: Mise en œuvre imprimante béton J3D
-version: 0.1
+version: 0.2
 date: 2026-10-04
 statut: ébauche
 ---
@@ -19,6 +19,11 @@ CONVENTIONS (lues par l'appli)
     Rôle: <machine | pompe | IHM | chariot | topo>
     Note: <texte affiché en encadré>
     Répéter: oui                     (Type: minuterie → alerte périodique)
+    Début: <n>   Fin: <n>            (niveaux d'ouverture, mode multi-opérateurs)
+                                     sur une phase : la phase est une tâche ;
+                                     sur une étape : l'étape devient une tâche indépendante.
+                                     Une tâche s'ouvre quand toutes les tâches de Fin < son Début sont validées.
+    Commentaire: obligatoire         (commentaire exigé en cas d'anomalie)
   - [ ] élément                      → case à cocher (Type: checklist)
   ![légende](images/xxx.jpg)         → photo / schéma
   Texte libre                        → consigne affichée
@@ -30,6 +35,8 @@ CONVENTIONS (lues par l'appli)
 # Phase : Logistique de transport jusqu'au chantier
 
 ## 1.1 Matériel à acheminer
+Début: 1
+Fin: 1
 Type: checklist
 <!-- À COMPLÉTER : listing complet -->
 - [ ] Container machine : pompe
@@ -46,6 +53,8 @@ Type: checklist
 - [ ] Big bag + support pour purges de démarrage et de fin
 
 ## 1.2 Point accessoires et outillage
+Début: 1
+Fin: 1
 Type: checklist
 <!-- À COMPLÉTER : liste outillage -->
 - [ ] Tuyau d'eau 25 m
@@ -58,6 +67,8 @@ Note: prévoir des outillages dédiés avec emplacements prévus.
 
 
 # Phase : Cartographie
+Début: 1
+Fin: 1
 Rôle: topo
 
 ## 2.1 Définir le set de points de repérage
@@ -70,6 +81,8 @@ Identifier les différentes positions de l'imprimante.
 
 
 # Phase : Implantation
+Début: 2
+Fin: 2
 
 ## 3.1 Positionner l'imprimante
 Type: action
@@ -92,6 +105,8 @@ Choisir un emplacement avec vue sur la zone de travail.
 
 
 # Phase : Réglage initial imprimante
+Début: 3
+Fin: 3
 Rôle: machine
 
 ## 4.1 Connecter l'imprimante
@@ -136,6 +151,8 @@ Si non: reprendre le réglage des patins. Ne jamais régler en descente
 
 
 # Phase : Déploiement du bras
+Début: 4
+Fin: 4
 Rôle: machine
 Durée: 15 min
 
@@ -182,6 +199,8 @@ Type: action
 
 
 # Phase : Configuration IHM
+Début: 5
+Fin: 6
 Rôle: IHM
 
 ## 6.1 Connecter l'IHM
@@ -208,6 +227,8 @@ Si non: corriger l'offset
 
 
 # Phase : Calage des points (Theodolite Positioning Assistant)
+Début: 5
+Fin: 6
 Rôle: topo
 Durée: 20 min
 
@@ -240,6 +261,8 @@ Type: checklist
 
 
 # Phase : Air print
+Début: 7
+Fin: 7
 Rôle: IHM
 Durée: 10 min
 
@@ -266,6 +289,8 @@ Connecter le compresseur à l'imprimante et le mettre en route.
 
 
 # Phase : Préparation pompe
+Début: 3
+Fin: 7
 Rôle: pompe
 Durée: 20 min
 
@@ -287,6 +312,8 @@ Si non: corriger avant de poursuivre
 
 
 # Phase : Raccordement eau
+Début: 2
+Fin: 2
 Rôle: pompe
 
 ## 10.1 Brancher l'eau
@@ -300,6 +327,8 @@ Si non: vérifier l'alimentation en eau
 
 
 # Phase : Préparation du tuyau
+Début: 8
+Fin: 8
 Rôle: pompe
 
 ## 11.1 Poser le tuyau
@@ -312,6 +341,8 @@ Plage: 7..10 L
 
 
 # Phase : Chargement trémie
+Début: 2
+Fin: 8
 Rôle: chariot
 Opérateurs: 2
 
@@ -333,6 +364,8 @@ Type: action
 
 
 # Phase : Démarrage pompe
+Début: 9
+Fin: 9
 Rôle: pompe
 Note: tête positionnée sur le big bag.
 
@@ -376,6 +409,8 @@ Plage: 28..28 cm
 
 
 # Phase : Contrôles pendant la marche
+Début: 10
+Fin: 10
 Type: info
 <!-- Phase de référence consultable pendant l'impression, plus alertes périodiques -->
 
@@ -403,6 +438,8 @@ La pompe consomme ~1 t/h (1 big bag). Silo à remplir toutes les heures – acc�
 
 
 # Phase : Purge tuyau
+Début: 11
+Fin: 11
 Rôle: pompe
 
 ## 15.1 Tête sur big bag
@@ -438,6 +475,8 @@ Note: si bouchon (la balle ne sort pas), introduire le tuyau sans embout pour d�
 
 
 # Phase : Nettoyage pompe
+Début: 12
+Fin: 12
 Rôle: pompe
 
 ## 16.1 Démontage
@@ -459,6 +498,8 @@ Si non: purger
 
 
 # Phase : Démontage tuyau
+Début: 13
+Fin: 13
 Rôle: machine
 Opérateurs: 2
 
@@ -472,6 +513,8 @@ Replier les anneaux de guidage.
 
 
 # Phase : Repli machine
+Début: 14
+Fin: 14
 Rôle: machine
 
 ## 18.1 Replier la tête
@@ -512,6 +555,8 @@ Sens inverse du montage.
 
 
 # Phase : Rangement
+Début: 15
+Fin: 15
 
 ## 19.1 IHM
 Type: action
