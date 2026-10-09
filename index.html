@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1f2a33">
+<meta name="color-scheme" content="light dark">
 <title>J3D Procédures</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
@@ -17,6 +18,8 @@
   --t-action:#2f6fb5; --t-controle:#7a3fb0; --t-valeur:#0f8a85; --t-avertissement:#b86a00;
   --t-minuterie:#3d4fb8; --t-checklist:#4a5866; --t-info:#6b7580;
   --r:14px;
+  --g-empty:#eceeec; --g-lock:#b9c1c8; --g-open:#e07a1f; --g-done:#2e9e5b; --g-mine:#2f6fd0;
+  color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -26,6 +29,8 @@
     --info-bg:#232c33; --top:#0b0f12; --top-fg:#eef1ef; --mine:#6aa7ec; --mine-bg:#1a2a3d;
     --t-action:#6aa7ec; --t-controle:#b585e6; --t-valeur:#3fc7c0; --t-avertissement:#f2b44a;
     --t-minuterie:#8a9bff; --t-checklist:#a5b2be; --t-info:#9aa6af;
+    --g-empty:#262e34; --g-lock:#55626d; --g-open:#f08a2c; --g-done:#3fbf74; --g-mine:#5b9cf0;
+    color-scheme:dark;
   }
 }
 *{box-sizing:border-box}
@@ -120,6 +125,14 @@ textarea.inp{min-height:70px;font-size:15px}
 #menu .mi.danger{color:var(--bad)}
 #menu hr{border:0;border-top:1px solid var(--line);margin:8px 0}
 #menu .ver{font-size:12px;color:var(--muted);margin:12px 10px 0}
+.gantt{display:grid;gap:2px;font-size:13px;align-items:stretch}
+.gantt .gh{font-size:11px;font-weight:700;color:var(--muted);text-align:center;padding:2px 0}
+.gantt .gh.gl{text-align:left}
+.gantt .gl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:4px 4px 4px 0;line-height:1.2}
+.gantt .gc{min-height:22px;border-radius:3px;background:var(--g-empty)}
+.g-done{background:var(--g-done)!important} .g-open{background:var(--g-open)!important} .g-mine{background:var(--g-mine)!important} .g-lock{background:var(--g-lock)!important}
+.glegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted);margin-top:10px}
+.glegend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:5px}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px}
 .kv dt{color:var(--muted)} .kv dd{margin:0}
 .report table{width:100%;border-collapse:collapse;font-size:12px}
@@ -1235,19 +1248,19 @@ function stepActions(t,f){
 
 /* ---------- Séquencement (vue Gantt simplifiée) ---------- */
 function renderLevels(){
-  const P = (view==='levels'&&!CHP)? PUB.parsed : (CHP||PUB.parsed);
-  const inCh = !!(CHP && CH && P===CHP);
+  const P = CHP||PUB.parsed;
+  const inCh = !!(CHP && CH);
   const maxL=Math.max(1,...P.tasks.map(t=>t.fin));
   header('Séquencement', `${P.tasks.length} tâches · niveaux 1 à ${maxL}`, null);
-  const cell=Math.max(14,Math.min(28,Math.floor((Math.min(window.innerWidth,640)-32-150)/maxL)));
-  let h=`<div class="card" style="overflow-x:auto"><table style="border-collapse:collapse;font-size:13px">
-    <tr><th style="text-align:left;padding:2px 6px">Tâche</th>${Array.from({length:maxL},(_,i)=>`<th style="width:${cell}px;font-weight:600;color:var(--muted)">${i+1}</th>`).join('')}</tr>`;
+  const cls = st => st==='done'?'g-done': st==='locked'?'g-lock': st==='mine'?'g-mine':'g-open';
+  let h=`<div class="card"><div class="gantt" style="grid-template-columns:minmax(96px,38%) repeat(${maxL},minmax(0,1fr))">
+    <div class="gh gl">Tâche</div>${Array.from({length:maxL},(_,i)=>`<div class="gh">${i+1}</div>`).join('')}`;
   P.tasks.forEach(t=>{
-    const st = inCh? taskState(t) : 'free';
-    const col = st==='done'?'var(--ok)': st==='locked'?'var(--line)': st==='mine'?'var(--mine)':'var(--accent)';
-    h+=`<tr><td style="padding:3px 6px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis">${esc(t.title)}</td>${Array.from({length:maxL},(_,i)=>{const on=i+1>=t.debut&&i+1<=t.fin;return `<td style="border:1px solid var(--line);height:${cell-4}px;background:${on?col:'transparent'}"></td>`;}).join('')}</tr>`;
+    const c = cls(inCh? taskState(t) : (t.debut===1?'free':'locked'));
+    h+=`<div class="gl" title="${esc(t.title)}">${esc(t.title)}</div>`+
+       Array.from({length:maxL},(_,i)=>{ const L=i+1, on=L>=t.debut&&L<=t.fin; return `<div class="gc ${on?c:''}"></div>`; }).join('');
   });
-  h+=`</table>${inCh?`<div class="small muted" style="margin-top:8px">🟩 terminée · 🟧 ouverte · 🟦 la mienne · ⬜ à venir</div>`:''}</div>
+  h+=`</div><div class="glegend"><span><i class="g-done"></i>terminée</span><span><i class="g-open"></i>ouverte</span>${inCh?'<span><i class="g-mine"></i>la mienne</span>':''}<span><i class="g-lock"></i>à venir</span></div></div>
     <div class="note small">Règle : une tâche s’ouvre quand toutes les tâches dont la <b>Fin</b> est inférieure à son <b>Début</b> sont validées.</div>`;
   $('#app').innerHTML=h; setBar(`<button class="btn" data-act="${inCh?'board':'home'}">‹ Retour</button>`);
 }

@@ -2,7 +2,7 @@
    - index.html, procedure_J3D.md, firebase-config.json : réseau d'abord, cache si hors ligne
    - Bibliothèques Firebase (gstatic) et images : cache d'abord
    Incrémenter VERSION à chaque modification de index.html ou sw.js. */
-const VERSION = 'j3d-v7';
+const VERSION = 'j3d-v8';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'procedure_J3D.md', 'firebase-config.json'];
 
 self.addEventListener('install', e => {
