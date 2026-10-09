@@ -59,7 +59,8 @@ Type: checklist
 <!-- À COMPLÉTER : liste outillage -->
 - [ ] Tuyau d'eau 25 m
 - [ ] Masse
-- [ ] Brosse de nettoyage
+- [ ] Brosse de nettoyage (pompe, vis, raccords)
+- [ ] Table (IHM)
 - [ ] EPI : casque à visière (ou casque + lunettes)
 - [ ] EPI : gants
 - [ ] EPI : chaussures de sécurité
