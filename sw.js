@@ -2,7 +2,7 @@
    - index.html, procedure_J3D.md, firebase-config.json : réseau d'abord, cache si hors ligne
    - Bibliothèques Firebase (gstatic) et images : cache d'abord
    Incrémenter VERSION à chaque modification de index.html ou sw.js. */
-const VERSION = 'j3d-v12';
+const VERSION = 'j3d-v13';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'procedure_J3D.md', 'firebase-config.json'];
 
 self.addEventListener('install', e => {
@@ -44,6 +44,7 @@ self.addEventListener('fetch', e => {
   if (url.hostname === 'www.gstatic.com' && url.pathname.startsWith('/firebasejs/')) { e.respondWith(cacheFirst(req)); return; }
   if (url.origin !== location.origin) return;           // Firestore / Auth : gérés par Firebase (hors ligne intégré)
   if (url.pathname.endsWith('.md') || url.pathname.endsWith('.json')) { e.respondWith(networkFirst(req)); return; }
+  if (url.pathname.endsWith('/admin.html')) return;   // module admin : toujours en ligne, hors cache
   if (req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('.html')) { e.respondWith(networkFirst(req, 'index.html')); return; }
   if (/\.(png|jpe?g|webp|gif|svg)$/i.test(url.pathname)) { e.respondWith(cacheFirst(req)); return; }
   e.respondWith(staleWhileRevalidate(req));

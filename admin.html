@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<title>J3D Administration</title>
+<link rel="icon" href="icons/icon-192.png">
+<style>
+:root{
+  --bg:#f3f4f2; --card:#ffffff; --fg:#1b2127; --muted:#5d6872; --line:#d9ddd8;
+  --accent:#d9650b; --accent-fg:#ffffff; --top:#1f2a33; --top-fg:#f3f4f2;
+  --ok:#1f8a4c; --ok-bg:#e3f4ea; --warn:#a86400; --warn-bg:#fff1d6; --bad:#c0262d; --bad-bg:#fde4e4; --info-bg:#e9eef3;
+  --bar:#3d7fe0; --bar-bg:#e2e6e9;
+  --r:12px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root{
+  --bg:#12171b; --card:#1c2328; --fg:#eef1ef; --muted:#9aa6af; --line:#2f3a42;
+  --accent:#f08a2c; --accent-fg:#1b1206; --top:#0b0f12; --top-fg:#eef1ef;
+  --ok:#4cc583; --ok-bg:#163526; --warn:#f2b44a; --warn-bg:#3a2b10; --bad:#ff6b70; --bad-bg:#3d1a1c; --info-bg:#232c33;
+  --bar:#6aa7ec; --bar-bg:#2f3a42; color-scheme:dark; } }
+*{box-sizing:border-box} html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+header{background:var(--top);color:var(--top-fg);padding:12px 16px;position:sticky;top:0;z-index:5}
+header .row{display:flex;align-items:center;gap:12px;max-width:1100px;margin:0 auto;flex-wrap:wrap}
+header h1{font-size:17px;margin:0} header .st{margin-left:auto;font-size:12px;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.14)}
+header .st.bad{background:var(--bad);color:#fff}
+nav{display:flex;gap:4px;max-width:1100px;margin:10px auto 0;overflow-x:auto}
+nav button{background:transparent;border:0;color:var(--top-fg);opacity:.75;padding:7px 12px;border-radius:8px;white-space:nowrap;cursor:pointer}
+nav button.on{opacity:1;background:rgba(255,255,255,.14);font-weight:600}
+nav .n{font-size:11px;background:var(--accent);color:var(--accent-fg);border-radius:999px;padding:0 6px;margin-left:5px}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.card h2{font-size:17px;margin:0 0 4px} .card h3{font-size:15px;margin:0 0 6px}
+.muted{color:var(--muted)} .small{font-size:13px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 12px;cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--info-bg);white-space:nowrap}
+.tag.ok{background:var(--ok-bg);color:var(--ok)} .tag.warn{background:var(--warn-bg);color:var(--warn)} .tag.bad{background:var(--bad-bg);color:var(--bad)}
+.grp{border:1px solid var(--line);border-radius:10px;margin:10px 0;overflow:hidden}
+.grp .gh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;background:var(--info-bg)}
+.grp .gh b{flex:1;min-width:200px}
+.grp .gb{padding:4px 12px 10px}
+.occ{padding:6px 0;border-bottom:1px dashed var(--line);font-size:14px} .occ:last-child{border-bottom:0}
+.act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.act select{border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--card)}
+.act textarea{flex:1;min-width:220px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--card);min-height:34px;resize:vertical}
+label.f{display:block;margin:10px 0 4px;font-size:13px;color:var(--muted)}
+input.f{width:100%;max-width:520px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--card)}
+.note{background:var(--info-bg);border-radius:8px;padding:10px 12px;font-size:14px;margin:8px 0}
+.note.warn{background:var(--warn-bg)} .note.bad{background:var(--bad-bg)} .note.ok{background:var(--ok-bg)}
+.rng{position:relative;height:14px;background:var(--bar-bg);border-radius:4px;min-width:160px}
+.rng i{position:absolute;top:3px;height:8px;background:var(--bar);border-radius:4px;opacity:.45}
+.rng b{position:absolute;top:0;width:3px;height:14px;background:var(--bar);border-radius:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips label{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;cursor:pointer;background:var(--card)}
+.chips input{margin-right:5px}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--top);color:var(--top-fg);padding:9px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+#toast.on{opacity:1}
+a{color:var(--bar)}
+</style>
+</head>
+<body>
+<header><div class="row"><h1>J3D · Administration</h1><span class="st" id="st">Connexion…</span></div>
+<nav id="nav"></nav></header>
+<main id="app"><div class="card muted">Chargement…</div></main>
+<div id="toast"></div>
+<script type="module">
+/* =====================================================================
+   Module d'administration J3D
+   - Lit les chantiers dans Firebase (mêmes données que l'appli)
+   - Dépose le journal CSV de chaque chantier clôturé dans un dépôt GitHub privé
+     (jeton saisi ici, conservé uniquement dans ce navigateur)
+   - Synthèse : anomalies, commentaires, durées, suivi des actions (collection « actions »)
+   ===================================================================== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const fmtT=ms=>{const d=new Date(ms);return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;};
+const fmtD=ms=>{const d=new Date(ms);return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;};
+const isoD=ms=>{const d=new Date(ms);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
+const fmtDur=ms=>{let s=Math.max(0,Math.round(ms/1000));const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?`${h} h ${pad(m)}`:m?`${m} min`:`${s} s`;};
+const toast=(m,d=2500)=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),d);};
+const LS={get(k,d){try{const v=localStorage.getItem('j3dadm.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem('j3dadm.'+k,JSON.stringify(v));}catch(e){}}};
+
+let CFG=LS.get('cfg',{repo:'erwanyves/J3D-Chantiers',branch:'main',dir:'chantiers',token:'',admin:''});
+let CH=[];          // chantiers {id,name,createdAt,closedAt,...,log:[]}
+let ACT={};         // actions par id
+let view=LS.get('view','chantiers');
+let INCL=LS.get('incl',null);   // ids inclus dans la synthèse (null = tous les clôturés)
+let DB=null;
+
+/* ---------- Données : Firebase (ou maquette window.__MOCK pour les essais) ---------- */
+async function connect(){
+  if(window.__MOCK){ DB={mock:true}; return; }
+  const cfg=await (await fetch('firebase-config.json',{cache:'no-cache'})).json();
+  const B='https://www.gstatic.com/firebasejs/10.12.2/';
+  const [A,F,Au]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-firestore.js'),import(B+'firebase-auth.js')]);
+  const app=A.initializeApp(cfg); const auth=Au.getAuth(app); await Au.signInAnonymously(auth);
+  DB={F,db:F.getFirestore(app)};
+}
+async function loadAll(){
+  if(DB.mock){ CH=structuredClone(window.__MOCK.chantiers); ACT=structuredClone(window.__MOCK.actions||{}); return; }
+  const {F,db}=DB;
+  const docs=(await F.getDocs(F.collection(db,'chantiers'))).docs;
+  CH=await Promise.all(docs.map(async d=>{ const c={id:d.id,...d.data()}; delete c.mdText;
+    c.log=(await F.getDocs(F.query(F.collection(db,'chantiers',d.id,'log'),F.orderBy('t')))).docs.map(x=>x.data()); return c; }));
+  ACT={}; (await F.getDocs(F.collection(db,'actions'))).docs.forEach(d=>ACT[d.id]={id:d.id,...d.data()});
+}
+async function saveChantier(id,fields){
+  const c=CH.find(x=>x.id===id); Object.assign(c,fields);
+  if(DB.mock) return; const {F,db}=DB; await F.updateDoc(F.doc(db,'chantiers',id),fields);
+}
+async function saveAction(a){
+  ACT[a.id]=a; if(DB.mock) return; const {F,db}=DB; const {id,...rest}=a; await F.setDoc(F.doc(db,'actions',id),rest);
+}
+
+/* ---------- CSV (même format que l'export de l'appli) ---------- */
+function csvOf(c){
+  const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const head=['Date','Heure','Opérateur','Tâche','Phase','Étape','Intitulé','Type','Résultat','Valeur','Unité','Commentaire'];
+  const lines=[`${q('Chantier')};${q(c.name)}`,`${q('Procédure')};${q((c.procName||'')+' v'+(c.procVersion||'?')+' ('+(c.procDate||'')+')')}`,
+    `${q('Début')};${q(fmtD(c.createdAt)+' '+fmtT(c.createdAt))}`,`${q('Clôture')};${q(c.closedAt?fmtD(c.closedAt)+' '+fmtT(c.closedAt):'')}`,
+    `${q('Identifiant')};${q(c.id)}`,'',head.map(q).join(';')];
+  (c.log||[]).slice().sort((a,b)=>a.t-b.t).forEach(e=>lines.push([fmtD(e.t),fmtT(e.t),e.by,e.task,e.phase,e.num,e.title,e.type,e.status,e.value,e.unit,e.comment].map(q).join(';')));
+  return '﻿'+lines.join('\r\n');
+}
+const safeName=s=>String(s||'chantier').normalize('NFC').replace(/[\\/:*?"<>|#%{}^~\[\]`]+/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^[-.]+|[-.]+$/g,'')||'chantier';
+const fileBase=c=>`${isoD(c.createdAt)}-${safeName(c.name)}`;
+function download(name,text,type='text/csv'){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000); }
+
+/* ---------- GitHub ---------- */
+const b64=t=>{ const u=new TextEncoder().encode(t); let s=''; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode(...u.subarray(i,i+0x8000)); return btoa(s); };
+const encPath=p=>p.split('/').map(encodeURIComponent).join('/');
+async function gh(path,opt={}){
+  if(!CFG.token) throw new Error('Jeton GitHub non renseigné (onglet Réglages)');
+  const r=await fetch(`https://api.github.com/repos/${CFG.repo}/${path}`,{...opt,headers:{'Accept':'application/vnd.github+json','Authorization':`Bearer ${CFG.token}`,'X-GitHub-Api-Version':'2022-11-28',...(opt.headers||{})}});
+  if(r.status===404) return null;
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(`GitHub ${r.status} : ${j.message||r.statusText}`);
+  return j;
+}
+const contentUrl=p=>`contents/${encPath(p)}`;
+async function pushChantier(c){
+  const csv=csvOf(c); let path=c.collected?.path, sha=null;
+  if(path){ const ex=await gh(contentUrl(path)+`?ref=${CFG.branch}`); sha=ex?.sha||null; }
+  else { // nouveau fichier : AAAA-MM-JJ-Nom.csv, suffixe -2, -3… si le nom est déjà pris par un autre chantier
+    const base=`${CFG.dir.replace(/\/+$/,'')}/${fileBase(c)}`;
+    for(let k=1;k<50;k++){ const p=k===1?`${base}.csv`:`${base}-${k}.csv`; const ex=await gh(contentUrl(p)+`?ref=${CFG.branch}`); if(!ex){ path=p; break; } }
+    if(!path) throw new Error('Trop de fichiers homonymes');
+  }
+  const body={message:`Chantier ${c.name} (${fmtD(c.createdAt)})${c.closedAt?'':' – non clôturé'}`,content:b64(csv),branch:CFG.branch};
+  if(sha) body.sha=sha;
+  const j=await gh(contentUrl(path),{method:'PUT',body:JSON.stringify(body)});
+  await saveChantier(c.id,{collected:{at:Date.now(),path,logCount:(c.log||[]).length,url:j?.content?.html_url||''}});
+  return path;
+}
+
+/* ---------- Synthèse ---------- */
+const inclIds=()=>INCL||CH.filter(c=>c.closedAt).map(c=>c.id);
+const inclCh=()=>{ const s=new Set(inclIds()); return CH.filter(c=>s.has(c.id)); };
+const stepKey=(phase,title)=>`${phase||'—'} › ${title||'—'}`;
+function hashId(s){ let h=5381; for(const ch of s) h=((h<<5)+h+ch.codePointAt(0))>>>0; return 'a'+h.toString(36); }
+const AUTO_COMMENTS=new Set(['hors plage','démarrée','alerte périodique démarrée','validée avant la fin de la minuterie']);
+function synth(){
+  const groups={};   // clé étape → {key,phase,title,anoms:[],comments:[],last}
+  const G=(e)=>{ const k=stepKey(e.phase,e.title); return groups[k]||(groups[k]={key:k,id:hashId(k),phase:e.phase,title:e.title,anoms:[],comments:[],last:0}); };
+  const durs={};     // tâche → [{c,ms}]
+  inclCh().forEach(c=>{
+    const L=(c.log||[]).slice().sort((a,b)=>a.t-b.t);
+    anomsOf(c).forEach(o=>{ const g=G(o.e); g.anoms.push(o); g.last=Math.max(g.last,o.e.t); });
+    L.forEach(e=>{
+      if(e.type==='événement') return;
+      if(e.comment&&!AUTO_COMMENTS.has(e.comment)&&(e.status==='ok'||e.status==='forcé')){ const g=G(e); g.comments.push({c,e}); g.last=Math.max(g.last,e.t); }
+    });
+    const start={},end={};
+    L.forEach(e=>{ if(e.type!=='événement'||!e.task) return; if(e.status==='prise'&&start[e.task]==null) start[e.task]=e.t; if(e.status==='terminée') end[e.task]=e.t; });
+    Object.keys(end).forEach(t=>{ if(start[t]!=null&&end[t]>=start[t]) (durs[t]||(durs[t]=[])).push({c,ms:end[t]-start[t],start:start[t]-c.createdAt}); });
+  });
+  return {groups:Object.values(groups),durs};
+}
+/* Anomalies d'un chantier : « forcé », ou « non conforme » non suivi d'un « forcé » sur la même étape
+   (un non conforme puis forcé = un seul incident, compté en « forcée ») */
+function anomsOf(c){
+  const L=(c.log||[]).slice().sort((a,b)=>a.t-b.t), out=[];
+  L.forEach((e,i)=>{
+    if(e.type==='événement') return;
+    if(e.status==='forcé') out.push({c,e,kind:'forcée'});
+    else if(e.status==='non conforme'){
+      const nxt=L.slice(i+1).find(x=>x.phase===e.phase&&x.title===e.title&&(x.status==='ok'||x.status==='forcé'));
+      if(!nxt||nxt.status==='ok') out.push({c,e,kind:nxt?'corrigée après reprise':'non conforme'});
+    }
+  });
+  return out;
+}
+const ST=['à traiter','en cours','traité','sans suite'];
+const stTag=s=>`<span class="tag ${s==='traité'?'ok':s==='en cours'?'warn':s==='sans suite'?'':'bad'}">${esc(s)}</span>`;
+function actionOf(g){ return ACT[g.id]||{id:g.id,key:g.key,phase:g.phase,title:g.title,status:'à traiter',note:'',updatedAt:0,updatedBy:''}; }
+const isNew=(g,a)=>(a.status==='traité'||a.status==='sans suite')&&a.updatedAt&&g.last>a.updatedAt;
+function actionCtl(g){
+  const a=actionOf(g);
+  return `<div class="act" data-aid="${g.id}"><select data-k="status">${ST.map(s=>`<option${s===a.status?' selected':''}>${s}</option>`).join('')}</select>
+    <textarea data-k="note" rows="1" placeholder="Action décidée, responsable, échéance…">${esc(a.note)}</textarea>
+    ${a.updatedAt?`<span class="small muted">${esc(a.updatedBy||'')} · ${fmtD(a.updatedAt)}</span>`:''}${isNew(g,a)?'<span class="tag bad">nouvelle occurrence</span>':''}</div>`;
+}
+const occLine=(c,e,extra='')=>`<div class="occ"><b>${esc(c.name)}</b> <span class="muted small">${fmtD(e.t)} ${fmtT(e.t).slice(0,5)} · ${esc(e.by||'?')}</span>${extra}
+  ${e.value!==''&&e.value!=null?` · valeur <b>${esc(e.value)} ${esc(e.unit||'')}</b>`:''}${e.comment&&!AUTO_COMMENTS.has(e.comment)?`<div>« ${esc(e.comment)} »</div>`:e.comment?`<div class="muted small">${esc(e.comment)}</div>`:''}</div>`;
+
+/* ---------- Rendu ---------- */
+function nav(){
+  const S=synth(); const pend=CH.filter(c=>c.closedAt&&!c.collected).length;
+  const todo=S.groups.filter(g=>{const a=actionOf(g); return a.status==='à traiter'||a.status==='en cours'||isNew(g,a);}).length;
+  const tabs=[['chantiers','Chantiers',pend],['anomalies','Anomalies',S.groups.filter(g=>g.anoms.length).length],['commentaires','Commentaires',S.groups.filter(g=>g.comments.length).length],['durees','Durées',0],['actions','Suivi des actions',todo],['reglages','Réglages',CFG.token?0:'!']];
+  $('#nav').innerHTML=tabs.map(([k,l,n])=>`<button data-view="${k}" class="${view===k?'on':''}">${l}${n?`<span class="n">${n}</span>`:''}</button>`).join('');
+}
+function inclChips(){
+  const s=new Set(inclIds());
+  return `<div class="card"><div class="bar" style="margin:0 0 6px"><b>Chantiers pris en compte</b><span class="muted small">${s.size}/${CH.length}</span>
+    <button class="btn" data-act="inclClosed">Clôturés</button><button class="btn" data-act="inclAll">Tous</button></div>
+    <div class="chips">${CH.slice().sort((a,b)=>b.createdAt-a.createdAt).map(c=>`<label><input type="checkbox" data-incl="${c.id}"${s.has(c.id)?' checked':''}>${esc(c.name)} <span class="muted">${fmtD(c.createdAt)}</span>${c.closedAt?'':' <span class="tag">en cours</span>'}</label>`).join('')}</div></div>`;
+}
+function render(){
+  nav(); LS.set('view',view);
+  const R={chantiers:rChantiers,anomalies:rAnomalies,commentaires:rComments,durees:rDurees,actions:rActions,reglages:rReglages}[view]||rChantiers;
+  $('#app').innerHTML=R();
+}
+function rChantiers(){
+  const pend=CH.filter(c=>c.closedAt&&!c.collected);
+  const stale=CH.filter(c=>c.collected&&(c.log||[]).length>c.collected.logCount);
+  const rows=CH.slice().sort((a,b)=>b.createdAt-a.createdAt).map(c=>{
+    const nA=anomsOf(c).length;
+    const ops=[...new Set((c.log||[]).map(e=>e.by).filter(Boolean))];
+    const dep=c.collected?`<span class="tag ok">déposé</span> <span class="small muted">${esc(c.collected.path.split('/').pop())}</span>${(c.log||[]).length>c.collected.logCount?' <span class="tag warn">journal modifié depuis</span>':''}`:c.closedAt?'<span class="tag bad">à collecter</span>':'<span class="tag">en cours</span>';
+    return `<tr><td><b>${esc(c.name)}</b><div class="small muted">v${esc(c.procVersion||'?')}</div></td><td>${fmtD(c.createdAt)}</td><td>${c.closedAt?fmtD(c.closedAt):'—'}</td>
+      <td class="small">${esc(ops.join(', '))}</td><td class="num">${(c.log||[]).length}</td><td class="num">${nA||''}</td><td>${dep}</td>
+      <td style="white-space:nowrap"><button class="btn" data-push="${c.id}"${CFG.token?'':' disabled'}>${c.collected?'Renvoyer':'Envoyer'}</button> <button class="btn" data-dl="${c.id}" title="Télécharger le CSV">⬇</button></td></tr>`; }).join('');
+  return `<div class="card"><h2>Collecte des journaux</h2>
+    <div class="muted small">Dépôt : <b>${esc(CFG.repo)}</b> / ${esc(CFG.dir)}/ · fichiers <code>AAAA-MM-JJ-NomDeChantier.csv</code> (date de début du chantier)</div>
+    ${!CFG.token?'<div class="note warn">Renseigner le jeton GitHub dans l’onglet <b>Réglages</b> pour activer l’envoi.</div>':''}
+    <div class="bar"><button class="btn pri" data-act="collect"${pend.length&&CFG.token?'':' disabled'}>Collecter les clôturés (${pend.length})</button>
+    ${stale.length?`<button class="btn" data-act="restale"${CFG.token?'':' disabled'}>Renvoyer les journaux modifiés (${stale.length})</button>`:''}
+    <button class="btn" data-act="reload">↻ Actualiser</button></div><div id="prog" class="small muted"></div></div>
+    <div class="card scroll"><table><thead><tr><th>Chantier</th><th>Début</th><th>Clôture</th><th>Opérateurs</th><th class="num">Lignes</th><th class="num">Anomalies</th><th>Dépôt</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="muted">Aucun chantier.</td></tr>'}</tbody></table></div>`;
+}
+function rAnomalies(){
+  const G=synth().groups.filter(g=>g.anoms.length).sort((a,b)=>b.anoms.length-a.anoms.length||b.last-a.last);
+  return inclChips()+`<div class="card"><h2>Anomalies par étape</h2><div class="muted small">Contrôles non conformes, valeurs hors plage, checklists incomplètes et validations forcées, regroupés par étape. Les plus fréquentes en premier.</div>
+    ${G.map(g=>`<div class="grp"><div class="gh"><b>${esc(g.title)}<div class="small muted" style="font-weight:400">${esc(g.phase)}</div></b><span class="tag bad">${g.anoms.length} anomalie${g.anoms.length>1?'s':''}</span>${stTag(actionOf(g).status)}</div>
+      <div class="gb">${g.anoms.sort((a,b)=>b.e.t-a.e.t).map(o=>occLine(o.c,o.e,` · <span class="tag ${o.kind==='forcée'?'warn':''}">${esc(o.kind)}</span>`)).join('')}${actionCtl(g)}</div></div>`).join('')||'<div class="note ok">Aucune anomalie sur les chantiers sélectionnés.</div>'}</div>`;
+}
+function rComments(){
+  const G=synth().groups.filter(g=>g.comments.length).sort((a,b)=>b.last-a.last);
+  return inclChips()+`<div class="card"><h2>Commentaires des opérateurs</h2><div class="muted small">Regroupés par étape, les plus récents en premier. Les mentions automatiques (minuteries, « hors plage ») sont écartées.</div>
+    ${G.map(g=>`<div class="grp"><div class="gh"><b>${esc(g.title)}<div class="small muted" style="font-weight:400">${esc(g.phase)}</div></b><span class="tag">${g.comments.length} commentaire${g.comments.length>1?'s':''}</span>${stTag(actionOf(g).status)}</div>
+      <div class="gb">${g.comments.sort((a,b)=>b.e.t-a.e.t).map(o=>occLine(o.c,o.e,o.e.status==='forcé'?' · <span class="tag warn">forcée</span>':'')).join('')}${actionCtl(g)}</div></div>`).join('')||'<div class="note">Aucun commentaire sur les chantiers sélectionnés.</div>'}</div>`;
+}
+function rDurees(){
+  const D=synth().durs; const rows=Object.entries(D).map(([t,a])=>{ const ms=a.map(x=>x.ms); return {t,a,n:a.length,min:Math.min(...ms),max:Math.max(...ms),avg:ms.reduce((s,x)=>s+x,0)/ms.length,st:a.reduce((s,x)=>s+x.start,0)/a.length}; }).sort((x,y)=>x.st-y.st);
+  const gmax=Math.max(1,...rows.map(r=>r.max));
+  const tot=inclCh().filter(c=>c.closedAt).map(c=>({c,ms:c.closedAt-c.createdAt})).sort((a,b)=>b.c.createdAt-a.c.createdAt);
+  return inclChips()+`<div class="card"><h2>Durée par tâche</h2><div class="muted small">De la première prise à la validation de la dernière étape. Barre : écart min–max ; trait : moyenne. Tâches dans l’ordre moyen de démarrage.</div>
+    <div class="scroll"><table><thead><tr><th>Tâche</th><th class="num">Chantiers</th><th class="num">Min</th><th class="num">Moyenne</th><th class="num">Max</th><th style="width:34%">Écart</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr title="${esc(r.a.map(x=>`${x.c.name} : ${fmtDur(x.ms)}`).join('\n'))}"><td>${esc(r.t)}</td><td class="num">${r.n}</td><td class="num">${fmtDur(r.min)}</td><td class="num"><b>${fmtDur(r.avg)}</b></td><td class="num">${fmtDur(r.max)}</td>
+      <td><div class="rng"><i style="left:${r.min/gmax*100}%;width:${Math.max(.8,(r.max-r.min)/gmax*100)}%"></i><b style="left:calc(${r.avg/gmax*100}% - 1px)"></b></div></td></tr>`).join('')||'<tr><td colspan="6" class="muted">Aucune tâche terminée.</td></tr>'}</tbody></table></div>
+    <div class="small muted" style="margin-top:6px">Survoler une ligne pour le détail par chantier.</div></div>
+    <div class="card"><h3>Durée totale des chantiers clôturés</h3><div class="scroll"><table><tbody>${tot.map(x=>`<tr><td>${esc(x.c.name)}</td><td>${fmtD(x.c.createdAt)}</td><td class="num"><b>${fmtDur(x.ms)}</b></td></tr>`).join('')||'<tr><td class="muted">—</td></tr>'}</tbody></table></div></div>`;
+}
+function rActions(){
+  const S=synth(); const f=LS.get('afilter','ouvertes');
+  const byId={}; S.groups.forEach(g=>byId[g.id]=g);
+  Object.values(ACT).forEach(a=>{ if(!byId[a.id]) byId[a.id]={id:a.id,key:a.key,phase:a.phase,title:a.title,anoms:[],comments:[],last:0}; });
+  let L=Object.values(byId).map(g=>({g,a:actionOf(g)}));
+  if(f==='ouvertes') L=L.filter(({g,a})=>a.status==='à traiter'||a.status==='en cours'||isNew(g,a));
+  else if(f!=='toutes') L=L.filter(({a})=>a.status===f);
+  const ord={'à traiter':0,'en cours':1,'traité':2,'sans suite':3};
+  L.sort((x,y)=>(isNew(y.g,y.a)-isNew(x.g,x.a))||ord[x.a.status]-ord[y.a.status]||(y.g.anoms.length+y.g.comments.length)-(x.g.anoms.length+x.g.comments.length));
+  return inclChips()+`<div class="card"><h2>Suivi des actions</h2><div class="muted small">Un point par étape ayant des anomalies ou des commentaires. Le statut et la note sont enregistrés dans Firebase (collection <code>actions</code>). Un point traité redevient visible si une nouvelle occurrence apparaît.</div>
+    <div class="bar">${['ouvertes','toutes',...ST].map(x=>`<button class="btn${x===f?' pri':''}" data-afilter="${x}">${x}</button>`).join('')}<button class="btn" data-act="exportSynth">⬇ Exporter la synthèse (CSV)</button></div>
+    <div class="scroll"><table><thead><tr><th>Étape</th><th class="num">Anom.</th><th class="num">Comm.</th><th>Dernière</th><th style="min-width:360px">Statut et action</th></tr></thead><tbody>
+    ${L.map(({g})=>`<tr><td><b>${esc(g.title)}</b><div class="small muted">${esc(g.phase)}</div></td><td class="num">${g.anoms.length||''}</td><td class="num">${g.comments.length||''}</td><td class="small">${g.last?fmtD(g.last):'—'}</td><td>${actionCtl(g)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">Rien à afficher pour ce filtre.</td></tr>'}</tbody></table></div></div>`;
+}
+function rReglages(){
+  return `<div class="card"><h2>Dépôt GitHub des journaux</h2>
+    <div class="note">Utiliser un <b>dépôt privé</b> (par ex. <code>J3D-Chantiers</code>) : les journaux contiennent les noms des opérateurs et leurs commentaires.<br>
+    Jeton : GitHub → Settings → Developer settings → <b>Fine-grained tokens</b> → Generate new token · Repository access : <i>Only select repositories</i> → ce dépôt · Permissions → <b>Contents : Read and write</b>.
+    Le jeton reste dans ce navigateur (stockage local), il n’est ni publié ni envoyé ailleurs qu’à GitHub.</div>
+    <label class="f">Dépôt (compte/nom)</label><input class="f" id="cRepo" value="${esc(CFG.repo)}">
+    <label class="f">Branche</label><input class="f" id="cBranch" value="${esc(CFG.branch)}">
+    <label class="f">Dossier</label><input class="f" id="cDir" value="${esc(CFG.dir)}">
+    <label class="f">Jeton d’accès (fine-grained)</label><input class="f" id="cTok" type="password" autocomplete="off" value="${esc(CFG.token)}" placeholder="github_pat_…">
+    <label class="f">Votre nom (pour le suivi des actions)</label><input class="f" id="cAdm" value="${esc(CFG.admin)}">
+    <div class="bar" style="margin-top:12px"><button class="btn pri" data-act="saveCfg">Enregistrer</button><button class="btn" data-act="testGh">Tester l’accès</button><button class="btn" data-act="forget">Oublier le jeton</button></div>
+    <div id="ghRes"></div></div>`;
+}
+
+/* ---------- Événements ---------- */
+async function collect(list){
+  const pr=$('#prog'); let ok=0;
+  for(const c of list){ pr.textContent=`Envoi de « ${c.name} »…`; try{ await pushChantier(c); ok++; }catch(e){ pr.innerHTML=`<span style="color:var(--bad)">${esc(c.name)} : ${esc(e.message)}</span>`; render(); return; } }
+  render(); toast(`${ok} journal${ok>1?'aux':''} déposé${ok>1?'s':''} dans ${CFG.repo}`);
+}
+document.addEventListener('click',async ev=>{
+  const b=ev.target.closest('button,[data-incl]'); if(!b) return;
+  if(b.dataset.view){ view=b.dataset.view; render(); return; }
+  if(b.dataset.afilter){ LS.set('afilter',b.dataset.afilter); render(); return; }
+  if(b.dataset.dl){ const c=CH.find(x=>x.id===b.dataset.dl); download(fileBase(c)+'.csv',csvOf(c)); return; }
+  if(b.dataset.push){ const c=CH.find(x=>x.id===b.dataset.push); b.disabled=true; b.textContent='Envoi…';
+    try{ const p=await pushChantier(c); toast(`Déposé : ${p}`); }catch(e){ toast(e.message,5000); } render(); return; }
+  switch(b.dataset.act){
+    case 'collect': b.disabled=true; await collect(CH.filter(c=>c.closedAt&&!c.collected)); return;
+    case 'restale': b.disabled=true; await collect(CH.filter(c=>c.collected&&(c.log||[]).length>c.collected.logCount)); return;
+    case 'reload': await refresh(); toast('Données actualisées'); return;
+    case 'inclAll': INCL=CH.map(c=>c.id); LS.set('incl',INCL); render(); return;
+    case 'inclClosed': INCL=null; LS.set('incl',null); render(); return;
+    case 'saveCfg': CFG={repo:$('#cRepo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,''),branch:$('#cBranch').value.trim()||'main',dir:$('#cDir').value.trim().replace(/^\/+|\/+$/g,'')||'chantiers',token:$('#cTok').value.trim(),admin:$('#cAdm').value.trim()}; LS.set('cfg',CFG); toast('Réglages enregistrés'); render(); return;
+    case 'forget': CFG.token=''; LS.set('cfg',CFG); toast('Jeton effacé de ce navigateur'); render(); return;
+    case 'testGh': { const o=$('#ghRes'); o.innerHTML='<div class="note">Test…</div>';
+      try{ const r=await gh(''); if(!r) throw new Error('Dépôt introuvable ou jeton sans accès à ce dépôt');
+        const w=r.permissions?.push; o.innerHTML=`<div class="note ${w?'ok':'warn'}">Dépôt <b>${esc(r.full_name)}</b> ${r.private?'(privé)':'<b>(PUBLIC – déconseillé)</b>'} · écriture ${w?'autorisée ✓':'NON autorisée : donner « Contents : Read and write » au jeton'}</div>`; }
+      catch(e){ o.innerHTML=`<div class="note bad">${esc(e.message)}</div>`; } return; }
+    case 'exportSynth': { const S=synth(), q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+      const L=[['Phase','Étape','Statut','Note','Anomalies','Commentaires','Dernière occurrence','Détail'].map(q).join(';')];
+      S.groups.forEach(g=>{ const a=actionOf(g); L.push([g.phase,g.title,a.status,a.note,g.anoms.length,g.comments.length,g.last?fmtD(g.last):'',
+        [...g.anoms.map(o=>`${o.c.name} ${fmtD(o.e.t)} ${o.kind}${o.e.value?` (${o.e.value} ${o.e.unit||''})`:''}${o.e.comment&&!AUTO_COMMENTS.has(o.e.comment)?` : ${o.e.comment}`:''}`),...g.comments.filter(o=>o.e.status!=='forcé').map(o=>`${o.c.name} ${fmtD(o.e.t)} : ${o.e.comment}`)].join(' | ')].map(q).join(';')); });
+      download(`synthese_J3D_${isoD(Date.now())}.csv`,'﻿'+L.join('\r\n')); return; }
+  }
+});
+document.addEventListener('change',async ev=>{
+  const t=ev.target;
+  if(t.dataset.incl){ const s=new Set(inclIds()); t.checked?s.add(t.dataset.incl):s.delete(t.dataset.incl); INCL=[...s]; LS.set('incl',INCL); render(); return; }
+  const box=t.closest('[data-aid]'); if(box&&t.dataset.k){
+    const g=synth().groups.find(x=>x.id===box.dataset.aid)||ACT[box.dataset.aid]; const a={...actionOf(g),key:g.key,phase:g.phase,title:g.title};
+    a[t.dataset.k]=t.value; a.updatedAt=Date.now(); a.updatedBy=CFG.admin||'admin';
+    try{ await saveAction(a); toast('Suivi enregistré'); }catch(e){ toast('Échec : '+e.message,5000); }
+    if(t.dataset.k==='status') render(); else nav();
+  }
+});
+
+async function refresh(){ await loadAll(); render(); }
+(async()=>{
+  try{ await connect(); await loadAll(); $('#st').textContent=DB.mock?'Maquette':'Firebase ✓'; render(); }
+  catch(e){ console.error(e); $('#st').textContent='Hors connexion'; $('#st').classList.add('bad'); $('#app').innerHTML=`<div class="card"><div class="note bad">Impossible de lire Firebase : ${esc(e.message)}</div></div>`; }
+})();
+</script>
+</body>
+</html>

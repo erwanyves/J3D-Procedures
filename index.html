@@ -1322,7 +1322,7 @@ function renderJournal(){
 function renderArchives(){
   header('Chantiers clôturés','',null);
   const arch=LIST.filter(c=>c.closedAt).sort((a,b)=>b.closedAt-a.closedAt);
-  $('#app').innerHTML=`<div class="card list">${arch.length?arch.map(a=>`<button class="li" data-open="${esc(a.id)}"><span>📄</span><span><b>${esc(a.name)}</b><br><span class="small muted">${fmtD(a.createdAt)} → ${fmtD(a.closedAt)} · v${esc(a.procVersion)}</span></span></button>`).join(''):'<div class="muted">Aucun chantier clôturé.</div>'}</div>`;
+  $('#app').innerHTML=`<div class="card list">${arch.length?arch.map(a=>`<button class="li" data-open="${esc(a.id)}"><span>📄</span><span><b>${esc(a.name)}</b><br><span class="small muted">${fmtD(a.createdAt)} → ${fmtD(a.closedAt)} · v${esc(a.procVersion)}${a.collected?' · CSV déposé ✓':''}</span></span></button>`).join(''):'<div class="muted">Aucun chantier clôturé.</div>'}</div>`;
   setBar(`<button class="btn" data-act="home">‹ Accueil</button>`);
 }
 function renderReport(){
