@@ -460,10 +460,6 @@ Si non: continuer à attendre
 Type: action
 Rétropompage sur la pompe : baisser la pression dans le tuyau jusqu'à pression négative.
 
-## 15.5 Surpresseur
-Type: action
-Mettre en route le surpresseur.
-
 ## 15.5 Passage de la balle
 Type: avertissement
 Démonter le tuyau en sortie de pompe, le connecter au raccord d'eau avec la balle. Lunettes obligatoires.
