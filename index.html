@@ -1253,18 +1253,39 @@ function renderLevels(){
   const inCh = !!(CHP && CH);
   const maxL=Math.max(1,...P.tasks.map(t=>t.fin));
   header('Séquencement', `${P.tasks.length} tâches · niveaux 1 à ${maxL}`, null);
-  const cls = st => st==='done'?'g-done': st==='locked'?'g-lock': st==='mine'?'g-mine':'g-open';
-  let h=`<div class="card"><div class="gantt" style="grid-template-columns:minmax(96px,38%) repeat(${maxL},minmax(0,1fr))">
-    <div class="gh gl">Tâche</div>${Array.from({length:maxL},(_,i)=>`<div class="gh">${i+1}</div>`).join('')}`;
-  P.tasks.forEach(t=>{
-    const c = cls(inCh? taskState(t) : (t.debut===1?'free':'locked'));
-    h+=`<div class="gl" title="${esc(t.title)}">${esc(t.title)}</div>`+
-       Array.from({length:maxL},(_,i)=>{ const L=i+1, on=L>=t.debut&&L<=t.fin; return `<div class="gc ${on?c:''}"></div>`; }).join('');
-  });
-  h+=`</div><div class="glegend"><span><i class="gc g-done"></i>terminée</span><span><i class="gc g-open"></i>ouverte</span>${inCh?'<span><i class="gc g-mine"></i>la mienne</span>':''}<span><i class="gc g-lock"></i>à venir</span><span><i class="gc"></i>hors plage</span></div></div>
+  const items=[['g-done','terminée'],['g-open','ouverte']].concat(inCh?[['g-mine','la mienne']]:[]).concat([['g-lock','à venir'],['g-empty','hors plage']]);
+  $('#app').innerHTML=`<div class="card"><canvas id="ganttCv" style="display:block;width:100%"></canvas>
+    <div class="glegend">${items.map(([k,l])=>`<span><canvas class="gsw" data-k="${k}" width="16" height="16" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px"></canvas>${l}</span>`).join('')}</div></div>
     <div class="note small">Règle : une tâche s’ouvre quand toutes les tâches dont la <b>Fin</b> est inférieure à son <b>Début</b> sont validées.</div>`;
-  $('#app').innerHTML=h; setBar(`<button class="btn" data-act="${inCh?'board':'home'}">‹ Retour</button>`);
+  setBar(`<button class="btn" data-act="${inCh?'board':'home'}">‹ Retour</button>`);
+  drawGantt(P,inCh,maxL);
 }
+/* Graphe dessiné en canevas : couleurs exactes, insensibles à l'assombrissement automatique d'Android */
+function drawGantt(P,inCh,maxL){
+  const cv=$('#ganttCv'); if(!cv) return;
+  const css=getComputedStyle(document.documentElement), v=n=>css.getPropertyValue(n).trim();
+  const COL={'g-done':v('--g-done'),'g-open':v('--g-open'),'g-mine':v('--g-mine'),'g-lock':v('--g-lock'),'g-empty':v('--g-empty')};
+  document.querySelectorAll('canvas.gsw').forEach(c=>{ const x=c.getContext('2d'); x.fillStyle=COL[c.dataset.k]; rr(x,0,0,16,16,3); x.fill(); });
+  const dpr=window.devicePixelRatio||1, W=cv.parentElement.clientWidth-32;
+  const font='13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif', fontH='bold 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+  const labelW=Math.min(Math.round(W*0.4),190), cellW=(W-labelW)/maxL, rowH=30, headH=22, gap=2;
+  const H=headH+P.tasks.length*rowH;
+  cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); cv.style.width=W+'px'; cv.style.height=H+'px';
+  const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,W,H);
+  x.textBaseline='middle';
+  x.font=fontH; x.fillStyle=v('--muted'); x.textAlign='left'; x.fillText('Tâche',0,headH/2);
+  x.textAlign='center'; for(let i=0;i<maxL;i++) x.fillText(String(i+1), labelW+i*cellW+cellW/2, headH/2);
+  P.tasks.forEach((t,r)=>{
+    const y=headH+r*rowH, st=inCh?taskState(t):(t.debut===1?'free':'locked');
+    const c = st==='done'?'g-done': st==='locked'?'g-lock': st==='mine'?'g-mine':'g-open';
+    x.font=font; x.fillStyle=v('--fg'); x.textAlign='left';
+    let s=t.title; const maxW=labelW-8; if(x.measureText(s).width>maxW){ while(s.length>1 && x.measureText(s+'…').width>maxW) s=s.slice(0,-1); s+='…'; }
+    x.fillText(s,0,y+rowH/2);
+    for(let i=0;i<maxL;i++){ const L=i+1, on=L>=t.debut&&L<=t.fin; x.fillStyle=COL[on?c:'g-empty']; rr(x,labelW+i*cellW+gap/2,y+gap/2,cellW-gap,rowH-gap,3); x.fill(); }
+  });
+}
+function rr(x,a,b,w,h,r){ x.beginPath(); if(x.roundRect){ x.roundRect(a,b,w,h,r); } else { x.rect(a,b,w,h); } }
+window.addEventListener('resize',()=>{ if(view==='phases') render(); });
 
 /* ---------- Consultation ---------- */
 function renderBrowse(){
