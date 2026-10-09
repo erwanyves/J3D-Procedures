@@ -18,7 +18,7 @@
   --t-action:#2f6fb5; --t-controle:#7a3fb0; --t-valeur:#0f8a85; --t-avertissement:#b86a00;
   --t-minuterie:#3d4fb8; --t-checklist:#4a5866; --t-info:#6b7580;
   --r:14px;
-  --g-empty:#eceeec; --g-lock:#b9c1c8; --g-open:#e07a1f; --g-done:#2e9e5b; --g-mine:#2f6fd0;
+  --g-empty:#e2e6e9; --g-lock:#7f8c97; --g-open:#f08a2c; --g-done:#34b36a; --g-mine:#3d7fe0;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
@@ -29,7 +29,7 @@
     --info-bg:#232c33; --top:#0b0f12; --top-fg:#eef1ef; --mine:#6aa7ec; --mine-bg:#1a2a3d;
     --t-action:#6aa7ec; --t-controle:#b585e6; --t-valeur:#3fc7c0; --t-avertissement:#f2b44a;
     --t-minuterie:#8a9bff; --t-checklist:#a5b2be; --t-info:#9aa6af;
-    --g-empty:#262e34; --g-lock:#55626d; --g-open:#f08a2c; --g-done:#3fbf74; --g-mine:#5b9cf0;
+    --g-empty:#d9dee2; --g-lock:#6f7d89; --g-open:#f08a2c; --g-done:#34b36a; --g-mine:#3d7fe0;
     color-scheme:dark;
   }
 }
@@ -130,9 +130,10 @@ textarea.inp{min-height:70px;font-size:15px}
 .gantt .gh.gl{text-align:left}
 .gantt .gl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:4px 4px 4px 0;line-height:1.2}
 .gantt .gc{min-height:22px;border-radius:3px;background:var(--g-empty)}
+.glegend .gc{min-height:0}
 .g-done{background:var(--g-done)!important} .g-open{background:var(--g-open)!important} .g-mine{background:var(--g-mine)!important} .g-lock{background:var(--g-lock)!important}
 .glegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted);margin-top:10px}
-.glegend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.glegend i{display:inline-block;width:16px;height:16px;border-radius:3px;vertical-align:-3px;margin-right:5px;background:var(--g-empty)}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px}
 .kv dt{color:var(--muted)} .kv dd{margin:0}
 .report table{width:100%;border-collapse:collapse;font-size:12px}
@@ -1260,7 +1261,7 @@ function renderLevels(){
     h+=`<div class="gl" title="${esc(t.title)}">${esc(t.title)}</div>`+
        Array.from({length:maxL},(_,i)=>{ const L=i+1, on=L>=t.debut&&L<=t.fin; return `<div class="gc ${on?c:''}"></div>`; }).join('');
   });
-  h+=`</div><div class="glegend"><span><i class="g-done"></i>terminée</span><span><i class="g-open"></i>ouverte</span>${inCh?'<span><i class="g-mine"></i>la mienne</span>':''}<span><i class="g-lock"></i>à venir</span></div></div>
+  h+=`</div><div class="glegend"><span><i class="gc g-done"></i>terminée</span><span><i class="gc g-open"></i>ouverte</span>${inCh?'<span><i class="gc g-mine"></i>la mienne</span>':''}<span><i class="gc g-lock"></i>à venir</span><span><i class="gc"></i>hors plage</span></div></div>
     <div class="note small">Règle : une tâche s’ouvre quand toutes les tâches dont la <b>Fin</b> est inférieure à son <b>Début</b> sont validées.</div>`;
   $('#app').innerHTML=h; setBar(`<button class="btn" data-act="${inCh?'board':'home'}">‹ Retour</button>`);
 }
