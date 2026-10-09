@@ -18,7 +18,7 @@
   --t-action:#2f6fb5; --t-controle:#7a3fb0; --t-valeur:#0f8a85; --t-avertissement:#b86a00;
   --t-minuterie:#3d4fb8; --t-checklist:#4a5866; --t-info:#6b7580;
   --r:14px;
-  --g-empty:#e2e6e9; --g-lock:#7f8c97; --g-open:#f08a2c; --g-done:#34b36a; --g-mine:#3d7fe0;
+  --g-empty:#c8cfd5; --g-lock:#7f8c97; --g-open:#f08a2c; --g-done:#34b36a; --g-mine:#3d7fe0;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
@@ -29,7 +29,7 @@
     --info-bg:#232c33; --top:#0b0f12; --top-fg:#eef1ef; --mine:#6aa7ec; --mine-bg:#1a2a3d;
     --t-action:#6aa7ec; --t-controle:#b585e6; --t-valeur:#3fc7c0; --t-avertissement:#f2b44a;
     --t-minuterie:#8a9bff; --t-checklist:#a5b2be; --t-info:#9aa6af;
-    --g-empty:#d9dee2; --g-lock:#6f7d89; --g-open:#f08a2c; --g-done:#34b36a; --g-mine:#3d7fe0;
+    --g-empty:#c8cfd5; --g-lock:#6f7d89; --g-open:#f08a2c; --g-done:#34b36a; --g-mine:#3d7fe0;
     color-scheme:dark;
   }
 }
@@ -1268,19 +1268,22 @@ function drawGantt(P,inCh,maxL){
   document.querySelectorAll('canvas.gsw').forEach(c=>{ const x=c.getContext('2d'); x.fillStyle=COL[c.dataset.k]; rr(x,0,0,16,16,3); x.fill(); });
   const dpr=window.devicePixelRatio||1, W=cv.parentElement.clientWidth-32;
   const font='13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif', fontH='bold 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  const labelW=Math.min(Math.round(W*0.4),190), cellW=(W-labelW)/maxL, rowH=30, headH=22, gap=2;
-  const H=headH+P.tasks.length*rowH;
+  const PAD=6, labelW=Math.min(Math.round(W*0.4),190), cellW=(W-labelW-PAD)/maxL, rowH=30, headH=22, gap=2;
+  const H=headH+P.tasks.length*rowH+PAD;
   cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); cv.style.width=W+'px'; cv.style.height=H+'px';
-  const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,W,H);
+  const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
+  /* fond gris clair opaque + texte de couleur fixe : lisible même si Android assombrit la page */
+  const BG='#eceff2', FG='#1f2a33', MUTED='#5b6873';
+  x.fillStyle=BG; rr(x,0,0,W,H,6); x.fill();
   x.textBaseline='middle';
-  x.font=fontH; x.fillStyle=v('--muted'); x.textAlign='left'; x.fillText('Tâche',0,headH/2);
+  x.font=fontH; x.fillStyle=MUTED; x.textAlign='left'; x.fillText('Tâche',PAD,headH/2);
   x.textAlign='center'; for(let i=0;i<maxL;i++) x.fillText(String(i+1), labelW+i*cellW+cellW/2, headH/2);
   P.tasks.forEach((t,r)=>{
     const y=headH+r*rowH, st=inCh?taskState(t):(t.debut===1?'free':'locked');
     const c = st==='done'?'g-done': st==='locked'?'g-lock': st==='mine'?'g-mine':'g-open';
-    x.font=font; x.fillStyle=v('--fg'); x.textAlign='left';
-    let s=t.title; const maxW=labelW-8; if(x.measureText(s).width>maxW){ while(s.length>1 && x.measureText(s+'…').width>maxW) s=s.slice(0,-1); s+='…'; }
-    x.fillText(s,0,y+rowH/2);
+    x.font=font; x.fillStyle=FG; x.textAlign='left';
+    let s=t.title; const maxW=labelW-8-PAD; if(x.measureText(s).width>maxW){ while(s.length>1 && x.measureText(s+'…').width>maxW) s=s.slice(0,-1); s+='…'; }
+    x.fillText(s,PAD,y+rowH/2);
     for(let i=0;i<maxL;i++){ const L=i+1, on=L>=t.debut&&L<=t.fin; x.fillStyle=COL[on?c:'g-empty']; rr(x,labelW+i*cellW+gap/2,y+gap/2,cellW-gap,rowH-gap,3); x.fill(); }
   });
 }
