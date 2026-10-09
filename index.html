@@ -829,13 +829,16 @@ function parseMD(text){
   phases.forEach(p=>{
     if(p.fin!=null&&p.debut!=null&&p.fin<p.debut) warnings.push({line:p.line,msg:`Phase « ${p.name} » : Fin < Début`});
     p.steps.forEach(s=>{
-      const lbl=`Étape ${s.num||s.title}`;
+      const lbl=`Étape « ${s.title} »`;
       if(!s.typeSet) warnings.push({line:s.line,msg:`${lbl} : pas de « Type: » (action par défaut)`});
       if(s.type==='valeur'&&!s.plage) warnings.push({line:s.line,msg:`${lbl} : Type valeur sans Plage`});
       if(s.type==='minuterie'&&!s.duree) warnings.push({line:s.line,msg:`${lbl} : minuterie sans Durée`});
       if(s.type==='checklist'&&!s.items.length) warnings.push({line:s.line,msg:`${lbl} : checklist sans case « - [ ] »`});
     });
   });
+  /* Numéros d'étape facultatifs dans le MD et ignorés : référence automatique <n° phase>.<n° étape>
+     (journal, CSV, rapport) ; non affichée à l'écran, l'ordre suffit. */
+  phases.forEach((p,pi)=>{ p.num=pi+1; p.steps.forEach((s,si)=>{ s.num=`${pi+1}.${si+1}`; }); });
   const flat=[];phases.forEach((p,pi)=>p.steps.forEach((s,si)=>flat.push({p:pi,s:si,key:`s${pi}_${si}`,phase:p,step:s})));
   if(!flat.length) warnings.push({line:0,msg:'Aucune étape trouvée'});
   const tasks=buildTasks(phases);
@@ -856,7 +859,7 @@ function buildTasks(phases){
     const rest=[];
     ph.steps.forEach((st,si)=>{
       const f={p:pi,s:si,key:`s${pi}_${si}`,phase:ph,step:st};
-      if(st.debut!=null) mk(`t${pi}_${si}`,`${st.num} ${st.title}`.trim(),ph,[f],st);
+      if(st.debut!=null) mk(`t${pi}_${si}`,st.title,ph,[f],st);
       else rest.push(f);
     });
     if(rest.length) mk(`t${pi}`,ph.name,ph,rest,ph);
@@ -1078,7 +1081,7 @@ async function closeChantier(){
 function startTimer(t,f){
   ensureAudio(); askNotif(); const s=f.step,dur=s.duree||60, key=`${CID}:${t.id}:${f.key}`;
   TIMERS=TIMERS.filter(x=>x.key!==key);
-  TIMERS.push({key,cid:CID,label:`${s.num} ${s.title}`,dur,endAt:Date.now()+dur*1000,repeat:!!s.repeat,due:false});
+  TIMERS.push({key,cid:CID,label:s.title,dur,endAt:Date.now()+dur*1000,repeat:!!s.repeat,due:false});
   store.set(K.timers,TIMERS); logEvt(t,f,'minuterie',s.title,s.dureeTxt||fmtDur(dur),s.repeat?'alerte périodique démarrée':'démarrée'); renderTimers();
 }
 const timerOf=(t,f)=>TIMERS.find(x=>x.key===`${CID}:${t.id}:${f.key}`);
@@ -1194,7 +1197,7 @@ function stepBody(f,ro,t){
     ${(s.operateurs||p.operateurs)?`<span>👥 <b>${esc(s.operateurs||p.operateurs)}</b></span>`:''}${(first&&p.dureeTxt)?`<span>⏱ ≈ <b>${esc(p.dureeTxt)}</b></span>`:''}</div>`;
   if(first){ p.text.forEach(x=>h+=`<div class="note small">${inl(x)}</div>`); p.notes.forEach(n=>h+=`<div class="note">${inl(n)}</div>`); }
   h+=`<div class="card"><div style="margin-bottom:8px"><span class="badge b-${s.type}">${esc(s.type)}</span></div>
-    <h2><span class="stepnum">${esc(s.num)}</span>${inl(s.title)}</h2><div class="text">${s.text.map(x=>`<p>${inl(x)}</p>`).join('')}</div>
+    <h2>${inl(s.title)}</h2><div class="text">${s.text.map(x=>`<p>${inl(x)}</p>`).join('')}</div>
     ${s.images.map(im=>`<figure><img src="${esc(im.src)}" alt="${esc(im.alt)}" loading="lazy" data-zoom>${im.alt?`<figcaption>${esc(im.alt)}</figcaption>`:''}</figure>`).join('')}
     ${s.notes.map(n=>`<div class="note warn">${inl(n)}</div>`).join('')}`;
   if(s.plage) h+=`<div class="target">${s.plage.min===s.plage.max?'Cible':'Plage'} : <b>${esc(plageTxt(s.plage))}</b></div>`;
@@ -1211,7 +1214,7 @@ function renderStep(){
   if(st!=='mine'){ curTid=null; go('board'); return; }
   const pos=taskPos(t), f=t.steps[pos], s=f.step, res=(TS(t.id).results||{})[f.key], u=uiState;
   const others=(TS(t.id).ops||[]).filter(x=>x!==USER);
-  header(`${s.num} ${s.title}`, `${t.title} · étape ${pos+1}/${t.steps.length}`, pos/t.steps.length);
+  header(s.title, `${t.title} · étape ${pos+1}/${t.steps.length}`, pos/t.steps.length);
   let h='';
   if(others.length) h+=`<div class="note small">👥 Tâche partagée avec <b>${others.map(esc).join(', ')}</b> – l’avancement est commun.</div>`;
   h+=stepBody(f,false,t);
@@ -1294,10 +1297,10 @@ window.addEventListener('resize',()=>{ if(view==='phases') render(); });
 function renderBrowse(){
   const PP=PUB.parsed;
   if(uiState.i==null){ header('Consultation',`v${PP.meta.version||'?'} · ${PP.flat.length} étapes`,null);
-    let h='<div class="card list">'; PP.phases.forEach((p,pi)=>{ h+=`<div class="phase-sec">${esc(p.name)}</div>`;
-      p.steps.forEach((s,si)=>{ const idx=PP.flat.findIndex(x=>x.p===pi&&x.s===si); h+=`<button class="li" data-bgo="${idx}"><span class="badge b-${s.type}" style="flex:none">${esc(s.type.slice(0,4))}</span><span><span class="stepnum">${esc(s.num)}</span>${inl(s.title)}</span></button>`; }); });
+    let h='<div class="card list">'; PP.phases.forEach((p,pi)=>{ h+=`<div class="phase-sec">${p.num}. ${esc(p.name)}</div>`;
+      p.steps.forEach((s,si)=>{ const idx=PP.flat.findIndex(x=>x.p===pi&&x.s===si); h+=`<button class="li" data-bgo="${idx}"><span class="badge b-${s.type}" style="flex:none">${esc(s.type.slice(0,4))}</span><span>${inl(s.title)}</span></button>`; }); });
     $('#app').innerHTML=h+'</div>'; setBar(`<button class="btn" data-act="${CID?'board':'home'}">‹ Retour</button>`); return; }
-  const f=PP.flat[uiState.i]; header(`${f.step.num} ${f.step.title}`,`Consultation · ${uiState.i+1}/${PP.flat.length}`,(uiState.i+1)/PP.flat.length);
+  const f=PP.flat[uiState.i]; header(f.step.title,`Consultation · ${uiState.i+1}/${PP.flat.length}`,(uiState.i+1)/PP.flat.length);
   $('#app').innerHTML=stepBody(f,true);
   setBar(`<div class="btnrow"><button class="btn" data-act="bprev" ${uiState.i?'':'disabled'}>‹</button><button class="btn" data-act="blist">Liste</button><button class="btn" data-act="bnext" ${uiState.i<PP.flat.length-1?'':'disabled'}>›</button></div>`);
 }
@@ -1311,7 +1314,7 @@ function renderJournal(){
     <dt>Procédure</dt><dd>${esc(CH.procName)} v${esc(CH.procVersion)}</dd><dt>Tâches</dt><dd>${CHP.tasks.filter(isDone).length}/${CHP.tasks.length} terminées${forced?`, <b style="color:var(--warn)">${forced} anomalie(s)</b>`:''}</dd>
     ${CH.closedAt?`<dt>Clôture</dt><dd>${fmtD(CH.closedAt)} ${fmtT(CH.closedAt)}</dd>`:''}</dl></div>
     <div class="card log">${LOG.slice().reverse().map(e=>`<div class="e"><div class="h">${fmtD(e.t)} ${fmtT(e.t)} · 👷 ${esc(e.by||'?')} ${statusTag(e.status)}</div>
-      <div>${e.num?`<span class="stepnum">${esc(e.num)}</span>`:''}${esc(e.title)}${e.value!==''?` – <b>${esc(e.value)} ${esc(e.unit)}</b>`:''}</div>${e.comment?`<div class="muted">« ${esc(e.comment)} »</div>`:''}</div>`).join('')||'<div class="muted">Vide</div>'}</div>`;
+      <div>${esc(e.title)}${e.value!==''?` – <b>${esc(e.value)} ${esc(e.unit)}</b>`:''}</div>${e.comment?`<div class="muted">« ${esc(e.comment)} »</div>`:''}</div>`).join('')||'<div class="muted">Vide</div>'}</div>`;
   $('#app').innerHTML=h;
   setBar(`<div class="btnrow"><button class="btn" data-act="csv">CSV</button><button class="btn" data-act="report">Rapport PDF</button></div>
     <div class="btnrow"><button class="btn ghost" data-act="${CH.closedAt?'home':'board'}">‹ ${CH.closedAt?'Accueil':'Tableau'}</button>${CH.closedAt?'':'<button class="btn bad" data-act="close">Clôturer</button>'}</div>`);
