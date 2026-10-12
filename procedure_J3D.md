@@ -54,6 +54,9 @@ Type: checklist
 - [ ] Station totale
 - [ ] 4 plaques sous patin
 - [ ] Big bag + support pour purges de démarrage et de fin
+- [ ] Armatures- coffrages, etc
+
+## Point accessoires et outillage
 
 ## Point accessoires et outillage
 Début: 1
