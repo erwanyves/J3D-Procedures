@@ -92,7 +92,10 @@ const fmtDur=ms=>{let s=Math.max(0,Math.round(ms/1000));const h=Math.floor(s/360
 const toast=(m,d=2500)=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),d);};
 const LS={get(k,d){try{const v=localStorage.getItem('j3dadm.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem('j3dadm.'+k,JSON.stringify(v));}catch(e){}}};
 
-let CFG=LS.get('cfg',{repo:'erwanyves/J3D-Chantiers',branch:'main',dir:'chantiers',token:'',admin:''});
+let CFG=Object.assign({repo:'erwanyves/J3D-Chantiers',branch:'main',dir:'chantiers',token:'',admin:'',useGh:true,useDbx:true,dbxKey:'aspo2z7vkjlt036',dbxDir:'chantiers',dbxRefresh:''},LS.get('cfg',{}));
+const useGh=()=>CFG.useGh&&!!CFG.token, useDbx=()=>CFG.useDbx&&!!CFG.dbxRefresh, canSend=()=>useGh()||useDbx();
+const isCollected=c=>!!c.collected&&(!useGh()||!!c.collected.path)&&(!useDbx()||!!c.collected.dbx)&&canSend();
+const destTxt=()=>[useGh()?`GitHub ${CFG.repo}`:'',useDbx()?'Dropbox':''].filter(Boolean).join(' et ')||'aucune destination';
 let CH=[];          // chantiers {id,name,createdAt,closedAt,...,log:[]}
 let ACT={};         // actions par id
 let MNT={};         // maintenance : dernière réalisation par opération (collection « maintenance »)
@@ -153,8 +156,67 @@ async function gh(path,opt={}){
   return j;
 }
 const contentUrl=p=>`contents/${encPath(p)}`;
+/* ---------- Dropbox (OAuth PKCE, dossier d'application « Applications/J3D ») ---------- */
+const DBX_REDIRECT=()=>location.origin+location.pathname;
+const b64url=a=>btoa(String.fromCharCode(...new Uint8Array(a))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+async function dbxConnect(){
+  if(!CFG.dbxKey) throw new Error('App key Dropbox manquante');
+  const v=b64url(crypto.getRandomValues(new Uint8Array(48))), st=b64url(crypto.getRandomValues(new Uint8Array(16)));
+  const ch=b64url(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)));
+  LS.set('pkce',{v,st});
+  location.href='https://www.dropbox.com/oauth2/authorize?'+new URLSearchParams({client_id:CFG.dbxKey,response_type:'code',code_challenge:ch,code_challenge_method:'S256',token_access_type:'offline',redirect_uri:DBX_REDIRECT(),state:st});
+}
+async function dbxCallback(){
+  const q=new URLSearchParams(location.search); if(!q.get('code')&&!q.get('error')) return false;
+  history.replaceState(null,'',DBX_REDIRECT()); view='reglages';
+  if(q.get('error')){ toast('Dropbox : autorisation refusée',4000); return true; }
+  const pk=LS.get('pkce',null); LS.set('pkce',null);
+  if(!pk||pk.st!==q.get('state')){ toast('Dropbox : réponse inattendue, recommencer la connexion',5000); return true; }
+  const r=await fetch('https://api.dropboxapi.com/oauth2/token',{method:'POST',body:new URLSearchParams({code:q.get('code'),grant_type:'authorization_code',code_verifier:pk.v,client_id:CFG.dbxKey,redirect_uri:DBX_REDIRECT()})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.refresh_token){ toast('Dropbox : échec de la connexion ('+(j.error_description||j.error||r.status)+')',6000); return true; }
+  CFG.dbxRefresh=j.refresh_token; CFG.useDbx=true; LS.set('cfg',CFG); DBXTOK={t:j.access_token,exp:Date.now()+(j.expires_in||14400)*1000-60000};
+  toast('Dropbox connecté',3000); return true;
+}
+let DBXTOK=null;
+async function dbxToken(){
+  if(DBXTOK&&DBXTOK.exp>Date.now()) return DBXTOK.t;
+  if(!CFG.dbxRefresh) throw new Error('Dropbox non connecté (onglet Réglages)');
+  const r=await fetch('https://api.dropboxapi.com/oauth2/token',{method:'POST',body:new URLSearchParams({grant_type:'refresh_token',refresh_token:CFG.dbxRefresh,client_id:CFG.dbxKey})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error('Dropbox : '+(j.error_description||j.error||r.status)+' – reconnecter dans Réglages');
+  DBXTOK={t:j.access_token,exp:Date.now()+(j.expires_in||14400)*1000-60000}; return DBXTOK.t;
+}
+const hdrJson=o=>JSON.stringify(o).replace(/[\u007f-\uffff]/g,c=>'\\u'+('000'+c.charCodeAt(0).toString(16)).slice(-4));
+async function dbxRpc(ep,arg){
+  const r=await fetch('https://api.dropboxapi.com/2/'+ep,{method:'POST',headers:{Authorization:'Bearer '+await dbxToken(),'Content-Type':'application/json'},body:JSON.stringify(arg)});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===409) return {__conflict:j}; if(!r.ok) throw new Error('Dropbox '+r.status+' : '+(j.error_summary||j.error||''));
+  return j;
+}
+async function dbxUpload(path,text){
+  const r=await fetch('https://content.dropboxapi.com/2/files/upload',{method:'POST',headers:{Authorization:'Bearer '+await dbxToken(),'Content-Type':'application/octet-stream','Dropbox-API-Arg':hdrJson({path,mode:'overwrite',mute:true})},body:new TextEncoder().encode(text)});
+  const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error('Dropbox '+r.status+' : '+(j.error_summary||''));
+  return j;
+}
+async function pushDropbox(c,csv){
+  let path=c.collected?.dbx;
+  if(!path){ const base=`/${CFG.dbxDir.replace(/^\/+|\/+$/g,'')}/${fileBase(c)}`;
+    for(let k=1;k<50;k++){ const p=k===1?`${base}.csv`:`${base}-${k}.csv`; const m=await dbxRpc('files/get_metadata',{path:p}); if(m.__conflict){ path=p; break; } }
+    if(!path) throw new Error('Trop de fichiers homonymes'); }
+  await dbxUpload(path,csv); return path;
+}
 async function pushChantier(c){
-  const csv=csvOf(c); let path=c.collected?.path, sha=null;
+  if(!canSend()) throw new Error('Aucune destination configurée (onglet Réglages)');
+  const csv=csvOf(c), col={...(c.collected||{})};
+  if(useDbx()) col.dbx=await pushDropbox(c,csv);
+  if(useGh()){ const p=await pushGithub(c,csv); col.path=p.path; col.url=p.url; }
+  col.at=Date.now(); col.logCount=(c.log||[]).length;
+  await saveChantier(c.id,{collected:col});
+  return [col.dbx?'Dropbox '+col.dbx:'',useGh()?'GitHub '+col.path:''].filter(Boolean).join(' · ');
+}
+async function pushGithub(c,csv){
+  let path=c.collected?.path, sha=null;
   if(path){ const ex=await gh(contentUrl(path)+`?ref=${CFG.branch}`); sha=ex?.sha||null; }
   else { // nouveau fichier : AAAA-MM-JJ-Nom.csv, suffixe -2, -3… si le nom est déjà pris par un autre chantier
     const base=`${CFG.dir.replace(/\/+$/,'')}/${fileBase(c)}`;
@@ -164,8 +226,7 @@ async function pushChantier(c){
   const body={message:`Chantier ${c.name} (${fmtD(c.createdAt)})${c.closedAt?'':' – non clôturé'}`,content:b64(csv),branch:CFG.branch};
   if(sha) body.sha=sha;
   const j=await gh(contentUrl(path),{method:'PUT',body:JSON.stringify(body)});
-  await saveChantier(c.id,{collected:{at:Date.now(),path,logCount:(c.log||[]).length,url:j?.content?.html_url||''}});
-  return path;
+  return {path,url:j?.content?.html_url||''};
 }
 
 /* ---------- Synthèse ---------- */
@@ -222,9 +283,9 @@ const occLine=(c,e,extra='')=>`<div class="occ"><b>${esc(c.name)}</b> <span clas
 
 /* ---------- Rendu ---------- */
 function nav(){
-  const S=synth(); const pend=CH.filter(c=>c.closedAt&&!c.collected).length;
+  const S=synth(); const pend=CH.filter(c=>c.closedAt&&!isCollected(c)).length;
   const todo=S.groups.filter(g=>{const a=actionOf(g); return a.status==='à traiter'||a.status==='en cours'||isNew(g,a);}).length;
-  const tabs=[['chantiers','Chantiers',pend],['anomalies','Anomalies',S.groups.filter(g=>g.anoms.length).length],['commentaires','Commentaires',S.groups.filter(g=>g.comments.length).length],['durees','Durées',0],['actions','Suivi des actions',todo],['maintenance','Maintenance',mntCount()],['reglages','Réglages',CFG.token?0:'!']];
+  const tabs=[['chantiers','Chantiers',pend],['anomalies','Anomalies',S.groups.filter(g=>g.anoms.length).length],['commentaires','Commentaires',S.groups.filter(g=>g.comments.length).length],['durees','Durées',0],['actions','Suivi des actions',todo],['maintenance','Maintenance',mntCount()],['reglages','Réglages',canSend()?0:'!']];
   $('#nav').innerHTML=tabs.map(([k,l,n])=>`<button data-view="${k}" class="${view===k?'on':''}">${l}${n?`<span class="n">${n}</span>`:''}</button>`).join('');
 }
 function inclChips(){
@@ -239,20 +300,21 @@ function render(){
   $('#app').innerHTML=R();
 }
 function rChantiers(){
-  const pend=CH.filter(c=>c.closedAt&&!c.collected);
+  const pend=CH.filter(c=>c.closedAt&&!isCollected(c));
   const stale=CH.filter(c=>c.collected&&(c.log||[]).length>c.collected.logCount);
   const rows=CH.slice().sort((a,b)=>b.createdAt-a.createdAt).map(c=>{
     const nA=anomsOf(c).length;
     const ops=[...new Set((c.log||[]).map(e=>e.by).filter(Boolean))];
-    const dep=c.collected?`<span class="tag ok">déposé</span> <span class="small muted">${esc(c.collected.path.split('/').pop())}</span>${(c.log||[]).length>c.collected.logCount?' <span class="tag warn">journal modifié depuis</span>':''}`:c.closedAt?'<span class="tag bad">à collecter</span>':'<span class="tag">en cours</span>';
+    const cc=c.collected||{}, nm=(cc.dbx||cc.path||'').split('/').pop();
+    const dep=isCollected(c)?`<span class="tag ok">déposé</span> <span class="small muted">${esc(nm)}${cc.dbx?' · Dropbox':''}${cc.path?' · GitHub':''}</span>${(c.log||[]).length>c.collected.logCount?' <span class="tag warn">journal modifié depuis</span>':''}`:c.closedAt?'<span class="tag bad">à collecter</span>':'<span class="tag">en cours</span>';
     return `<tr><td><b>${esc(c.name)}</b><div class="small muted">v${esc(c.procVersion||'?')}</div></td><td>${fmtD(c.createdAt)}</td><td>${c.closedAt?fmtD(c.closedAt):'—'}</td>
       <td class="small">${esc(ops.join(', '))}</td><td class="num">${(c.log||[]).length}</td><td class="num">${nA||''}</td><td>${dep}</td>
-      <td style="white-space:nowrap"><button class="btn" data-push="${c.id}"${CFG.token?'':' disabled'}>${c.collected?'Renvoyer':'Envoyer'}</button> <button class="btn" data-dl="${c.id}" title="Télécharger le CSV">⬇</button></td></tr>`; }).join('');
+      <td style="white-space:nowrap"><button class="btn" data-push="${c.id}"${canSend()?'':' disabled'}>${c.collected?'Renvoyer':'Envoyer'}</button> <button class="btn" data-dl="${c.id}" title="Télécharger le CSV">⬇</button></td></tr>`; }).join('');
   return `<div class="card"><h2>Collecte des journaux</h2>
-    <div class="muted small">Dépôt : <b>${esc(CFG.repo)}</b> / ${esc(CFG.dir)}/ · fichiers <code>AAAA-MM-JJ-NomDeChantier.csv</code> (date de début du chantier)</div>
-    ${!CFG.token?'<div class="note warn">Renseigner le jeton GitHub dans l’onglet <b>Réglages</b> pour activer l’envoi.</div>':''}
-    <div class="bar"><button class="btn pri" data-act="collect"${pend.length&&CFG.token?'':' disabled'}>Collecter les clôturés (${pend.length})</button>
-    ${stale.length?`<button class="btn" data-act="restale"${CFG.token?'':' disabled'}>Renvoyer les journaux modifiés (${stale.length})</button>`:''}
+    <div class="muted small">Destination : <b>${esc(destTxt())}</b>${useDbx()?` (Dropbox : Applications/J3D/${esc(CFG.dbxDir)}/)`:''} · fichiers <code>AAAA-MM-JJ-NomDeChantier.csv</code> (date de début du chantier)</div>
+    ${!canSend()?'<div class="note warn">Connecter Dropbox (ou renseigner le jeton GitHub) dans l’onglet <b>Réglages</b> pour activer l’envoi.</div>':''}
+    <div class="bar"><button class="btn pri" data-act="collect"${pend.length&&canSend()?'':' disabled'}>Collecter les clôturés (${pend.length})</button>
+    ${stale.length?`<button class="btn" data-act="restale"${canSend()?'':' disabled'}>Renvoyer les journaux modifiés (${stale.length})</button>`:''}
     <button class="btn" data-act="reload">↻ Actualiser</button></div><div id="prog" class="small muted"></div></div>
     <div class="card scroll"><table><thead><tr><th>Chantier</th><th>Début</th><th>Clôture</th><th>Opérateurs</th><th class="num">Lignes</th><th class="num">Anomalies</th><th>Dépôt</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="muted">Aucun chantier.</td></tr>'}</tbody></table></div>`;
 }
@@ -295,7 +357,16 @@ function rActions(){
     ${L.map(({g})=>`<tr><td><b>${esc(g.title)}</b><div class="small muted">${esc(g.phase)}</div></td><td class="num">${g.anoms.length||''}</td><td class="num">${g.comments.length||''}</td><td class="small">${g.last?fmtD(g.last):'—'}</td><td>${actionCtl(g)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">Rien à afficher pour ce filtre.</td></tr>'}</tbody></table></div></div>`;
 }
 function rReglages(){
-  return `<div class="card"><h2>Dépôt GitHub des journaux</h2>
+  return `<div class="card"><h2>Destination des journaux</h2>
+    <label class="f" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="cUseDbx"${CFG.useDbx?' checked':''}> Dropbox ${CFG.dbxRefresh?'<span class="tag ok">connecté</span>':'<span class="tag">non connecté</span>'}</label>
+    <label class="f" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="cUseGh"${CFG.useGh?' checked':''}> GitHub (dépôt privé) ${CFG.token?'<span class="tag ok">jeton présent</span>':'<span class="tag">pas de jeton</span>'}</label></div>
+  <div class="card"><h2>Dropbox</h2>
+    <div class="note">Les journaux sont déposés dans <b>Dropbox › Applications › J3D › ${esc(CFG.dbxDir)}</b>. La connexion se fait une fois sur le site de Dropbox ; elle est mémorisée dans ce navigateur et se renouvelle seule.</div>
+    <label class="f">App key</label><input class="f" id="cDbxKey" value="${esc(CFG.dbxKey)}">
+    <label class="f">Dossier</label><input class="f" id="cDbxDir" value="${esc(CFG.dbxDir)}">
+    <div class="bar" style="margin-top:12px"><button class="btn pri" data-act="dbxConnect">${CFG.dbxRefresh?'Reconnecter':'Connecter'} Dropbox</button><button class="btn" data-act="dbxTest"${CFG.dbxRefresh?'':' disabled'}>Tester</button><button class="btn" data-act="dbxForget"${CFG.dbxRefresh?'':' disabled'}>Déconnecter</button></div>
+    <div id="dbxRes"></div></div>
+  <div class="card"><h2>Dépôt GitHub des journaux</h2>
     <div class="note">Utiliser un <b>dépôt privé</b> (par ex. <code>J3D-Chantiers</code>) : les journaux contiennent les noms des opérateurs et leurs commentaires.<br>
     Jeton : GitHub → Settings → Developer settings → <b>Fine-grained tokens</b> → Generate new token · Repository access : <i>Only select repositories</i> → ce dépôt · Permissions → <b>Contents : Read and write</b>.
     Le jeton reste dans ce navigateur (stockage local), il n’est ni publié ni envoyé ailleurs qu’à GitHub.</div>
@@ -369,10 +440,13 @@ function rMaintenance(){
 }
 
 /* ---------- Événements ---------- */
+function readCfg(){ const v=id=>$(id)?.value?.trim();
+  if($('#cRepo')) Object.assign(CFG,{repo:v('#cRepo').replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,''),branch:v('#cBranch')||'main',dir:(v('#cDir')||'').replace(/^\/+|\/+$/g,'')||'chantiers',token:v('#cTok'),admin:v('#cAdm')});
+  if($('#cDbxKey')) Object.assign(CFG,{dbxKey:v('#cDbxKey'),dbxDir:(v('#cDbxDir')||'').replace(/^\/+|\/+$/g,'')||'chantiers',useDbx:$('#cUseDbx').checked,useGh:$('#cUseGh').checked}); }
 async function collect(list){
   const pr=$('#prog'); let ok=0;
   for(const c of list){ pr.textContent=`Envoi de « ${c.name} »…`; try{ await pushChantier(c); ok++; }catch(e){ pr.innerHTML=`<span style="color:var(--bad)">${esc(c.name)} : ${esc(e.message)}</span>`; render(); return; } }
-  render(); toast(`${ok} journal${ok>1?'aux':''} déposé${ok>1?'s':''} dans ${CFG.repo}`);
+  render(); toast(`${ok} journal${ok>1?'aux':''} déposé${ok>1?'s':''} : ${destTxt()}`);
 }
 document.addEventListener('click',async ev=>{
   const b=ev.target.closest('button,[data-incl]'); if(!b) return;
@@ -380,18 +454,24 @@ document.addEventListener('click',async ev=>{
   if(b.dataset.afilter){ LS.set('afilter',b.dataset.afilter); render(); return; }
   if(b.dataset.dl){ const c=CH.find(x=>x.id===b.dataset.dl); download(fileBase(c)+'.csv',csvOf(c)); return; }
   if(b.dataset.push){ const c=CH.find(x=>x.id===b.dataset.push); b.disabled=true; b.textContent='Envoi…';
-    try{ const p=await pushChantier(c); toast(`Déposé : ${p}`); }catch(e){ toast(e.message,5000); } render(); return; }
+    try{ const p=await pushChantier(c); toast(`Déposé : ${p}`,4000); }catch(e){ toast(e.message,6000); } render(); return; }
   if(b.dataset.mdone){ const cur=compteur(), vin=parseFloat(($('#mH')?.value||'').replace(',','.')); const d={lastH:!isNaN(vin)?vin:(cur?cur.h:null),lastAt:Date.now(),by:CFG.admin||'admin'};
     try{ await saveMnt(b.dataset.mdone,d); toast('Maintenance enregistrée'); }catch(e){ toast('Échec : '+e.message,5000); } render(); return; }
   switch(b.dataset.act){
     case 'setCompteur': { const v=parseFloat(($('#mH').value||'').replace(',','.')); if(isNaN(v)||v<0){ toast('Saisir un nombre d’heures'); return; }
       try{ await saveMnt('_compteur',{h:v,at:Date.now(),by:CFG.admin||'admin'}); toast('Compteur enregistré'); }catch(e){ toast('Échec : '+e.message,5000); } render(); return; }
-    case 'collect': b.disabled=true; await collect(CH.filter(c=>c.closedAt&&!c.collected)); return;
+    case 'collect': b.disabled=true; await collect(CH.filter(c=>c.closedAt&&!isCollected(c))); return;
     case 'restale': b.disabled=true; await collect(CH.filter(c=>c.collected&&(c.log||[]).length>c.collected.logCount)); return;
     case 'reload': await refresh(); toast('Données actualisées'); return;
     case 'inclAll': INCL=CH.map(c=>c.id); LS.set('incl',INCL); render(); return;
     case 'inclClosed': INCL=null; LS.set('incl',null); render(); return;
-    case 'saveCfg': CFG={repo:$('#cRepo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,''),branch:$('#cBranch').value.trim()||'main',dir:$('#cDir').value.trim().replace(/^\/+|\/+$/g,'')||'chantiers',token:$('#cTok').value.trim(),admin:$('#cAdm').value.trim()}; LS.set('cfg',CFG); toast('Réglages enregistrés'); render(); return;
+    case 'saveCfg': readCfg(); LS.set('cfg',CFG); toast('Réglages enregistrés'); render(); return;
+    case 'dbxConnect': readCfg(); LS.set('cfg',CFG); try{ await dbxConnect(); }catch(e){ toast(e.message,5000); } return;
+    case 'dbxForget': CFG.dbxRefresh=''; DBXTOK=null; LS.set('cfg',CFG); toast('Dropbox déconnecté de ce navigateur'); render(); return;
+    case 'dbxTest': { const o=$('#dbxRes'); o.innerHTML='<div class="note">Test…</div>';
+      try{ const r=await dbxRpc('files/list_folder',{path:''}); if(r.__conflict) throw new Error(r.__conflict.error_summary||'erreur');
+        o.innerHTML=`<div class="note ok">Dropbox accessible ✓ – ${r.entries.length} élément(s) à la racine du dossier de l’application.</div>`; }
+      catch(e){ o.innerHTML=`<div class="note bad">${esc(e.message)}</div>`; } return; }
     case 'forget': CFG.token=''; LS.set('cfg',CFG); toast('Jeton effacé de ce navigateur'); render(); return;
     case 'testGh': { const o=$('#ghRes'); o.innerHTML='<div class="note">Test…</div>';
       try{ const r=await gh(''); if(!r) throw new Error('Dépôt introuvable ou jeton sans accès à ce dépôt');
@@ -417,7 +497,7 @@ document.addEventListener('change',async ev=>{
 
 async function refresh(){ await loadAll(); render(); }
 (async()=>{
-  try{ await connect(); await loadAll(); $('#st').textContent=DB.mock?'Maquette':'Firebase ✓'; render(); }
+  try{ await dbxCallback().catch(e=>toast('Dropbox : '+e.message,6000)); await connect(); await loadAll(); $('#st').textContent=DB.mock?'Maquette':'Firebase ✓'; render(); }
   catch(e){ console.error(e); $('#st').textContent='Hors connexion'; $('#st').classList.add('bad'); $('#app').innerHTML=`<div class="card"><div class="note bad">Impossible de lire Firebase : ${esc(e.message)}</div></div>`; }
 })();
 </script>
