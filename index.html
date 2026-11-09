@@ -59,6 +59,12 @@ main{padding:16px;max-width:640px;margin:0 auto}
 .card h3{margin:0 0 8px;font-size:16px}
 .muted{color:var(--muted)} .small{font-size:14px}
 .badge{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;color:#fff;background:var(--t-info)}
+.crit{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;margin-left:6px;border:1.5px solid currentColor}
+.crit-securite{color:var(--bad);background:var(--bad-bg)} .crit-machine{color:var(--warn);background:var(--warn-bg)} .crit-qualite{color:var(--mine);background:var(--mine-bg)}
+.card.cs{border-left:5px solid var(--bad)}
+.ci{font-size:13px;margin-right:4px}
+.dep h3{margin:14px 0 6px} .dep .code{font-family:ui-monospace,monospace;font-weight:700;white-space:nowrap}
+.dep .row{padding:8px 0;border-bottom:1px solid var(--line)} .dep .row:last-child{border-bottom:0}
 .b-action{background:var(--t-action)} .b-contrôle{background:var(--t-controle)} .b-valeur{background:var(--t-valeur)}
 .b-avertissement{background:var(--t-avertissement)} .b-minuterie{background:var(--t-minuterie)} .b-checklist{background:var(--t-checklist)} .b-info{background:var(--t-info)}
 .stepnum{font-weight:700;color:var(--muted);margin-right:6px}
@@ -773,6 +779,10 @@ function toast(msg,ms=2600){const t=$('#toast');t.textContent=msg;t.style.displa
 /* =====================================================================
    Parseur Markdown
    ===================================================================== */
+const CRIT={securite:'sécurité',machine:'machine',qualite:'qualité'};
+const CRIT_UI={'sécurité':['crit-securite','⛑','Sécurité'],'machine':['crit-machine','⚙','Machine'],'qualité':['crit-qualite','◎','Qualité']};
+const critBadge=c=>c&&CRIT_UI[c]?`<span class="crit ${CRIT_UI[c][0]}">${CRIT_UI[c][1]} ${CRIT_UI[c][2]}</span>`:'';
+const critIcon=c=>c&&CRIT_UI[c]?`<span class="ci" title="${CRIT_UI[c][2]}">${CRIT_UI[c][1]}</span>`:'';
 const TYPES={action:'action',controle:'contrôle',valeur:'valeur',avertissement:'avertissement',minuterie:'minuterie',checklist:'checklist',info:'info'};
 function parseDuree(v){const m=noAcc(v).match(/([\d.,]+)\s*(h|min|mn|m|s)?/);if(!m)return null;const n=num(m[1]),u=m[2]||'min';return u==='h'?n*3600:u==='s'?n:n*60;}
 function parsePlage(v){
@@ -816,6 +826,7 @@ function parseMD(text){
         case 'note':tgt.notes.push(v);break;
         case 'repeter':tgt.repeat=/^(oui|yes|true|1)/i.test(noAcc(v));break;
         case 'commentaire':tgt.commentReq=/oblig/i.test(noAcc(v));break;
+        case 'criticite':{const c=CRIT[noAcc(v)];if(c)tgt.crit=c;else warnings.push({line:ln,msg:`Criticité inconnue « ${v} » (sécurité, machine ou qualité)`});break;}
         case 'debut':{const n=parseInt(v,10);if(isNaN(n))warnings.push({line:ln,msg:`Début illisible « ${v} »`});else tgt.debut=n;break;}
         case 'fin':{const n=parseInt(v,10);if(isNaN(n))warnings.push({line:ln,msg:`Fin illisible « ${v} »`});else tgt.fin=n;break;}
         default:used=false;
@@ -1032,7 +1043,7 @@ function onRemoteChange(prev,c){
 function logEvt(t,f,status,label,value,comment){
   if(!CID) return;
   S.log(CID,{t:Date.now(),by:USER,task:t?t.title:'',phase:f?f.phase.name:(t?t.phase.name:''),num:f?f.step.num:'',title:f?f.step.title:label,
-    type:f?f.step.type:'événement',status,value:value??'',unit:f&&f.step.plage?f.step.plage.unit:'',comment:comment||''});
+    type:f?f.step.type:'événement',status,value:value??'',unit:f&&f.step.plage?f.step.plage.unit:'',comment:comment||'',crit:f&&f.step.crit||''});
 }
 async function takeTask(t){
   if(!isOpen(t)){ toast('Tâche pas encore ouverte'); return; }
@@ -1126,7 +1137,7 @@ function renderSync(){
 function render(){
   renderTimers();
   if(['board','step','journal','report'].includes(view) && (!CH||!CHP)){ header('Chargement…','',null); $('#app').innerHTML='<div class="card muted">Connexion au chantier…</div>'; setBar(''); return; }
-  ({home:renderHome,board:renderBoard,step:renderStep,journal:renderJournal,report:renderReport,browse:renderBrowse,archives:renderArchives,phases:renderLevels}[view]||renderHome)();
+  ({home:renderHome,board:renderBoard,step:renderStep,journal:renderJournal,report:renderReport,browse:renderBrowse,archives:renderArchives,phases:renderLevels,depannage:renderDepannage}[view]||renderHome)();
 }
 
 /* ---------- Accueil ---------- */
@@ -1196,7 +1207,7 @@ function stepBody(f,ro,t){
   let h=`<div class="phasehead"><span><b>${esc(t?t.title:p.name)}</b></span>${(s.role||p.role)?`<span>Rôle : <b>${esc(s.role||p.role)}</b></span>`:''}
     ${(s.operateurs||p.operateurs)?`<span>👥 <b>${esc(s.operateurs||p.operateurs)}</b></span>`:''}${(first&&p.dureeTxt)?`<span>⏱ ≈ <b>${esc(p.dureeTxt)}</b></span>`:''}</div>`;
   if(first){ p.text.forEach(x=>h+=`<div class="note small">${inl(x)}</div>`); p.notes.forEach(n=>h+=`<div class="note">${inl(n)}</div>`); }
-  h+=`<div class="card"><div style="margin-bottom:8px"><span class="badge b-${s.type}">${esc(s.type)}</span></div>
+  h+=`<div class="card${s.crit==='sécurité'?' cs':''}"><div style="margin-bottom:8px"><span class="badge b-${s.type}">${esc(s.type)}</span>${critBadge(s.crit)}</div>
     <h2>${inl(s.title)}</h2><div class="text">${s.text.map(x=>`<p>${inl(x)}</p>`).join('')}</div>
     ${s.images.map(im=>`<figure><img src="${esc(im.src)}" alt="${esc(im.alt)}" loading="lazy" data-zoom>${im.alt?`<figcaption>${esc(im.alt)}</figcaption>`:''}</figure>`).join('')}
     ${s.notes.map(n=>`<div class="note warn">${inl(n)}</div>`).join('')}`;
@@ -1223,7 +1234,7 @@ function renderStep(){
     h+=`<div class="card">${s.items.map((it,k)=>`<label class="check"><input type="checkbox" data-chk="${k}" ${u.checks[k]?'checked':''}><span>${inl(it)}</span></label>`).join('')}</div>`; }
   if(s.type==='valeur') h+=`<div class="card"><label class="fld" for="fVal">Valeur mesurée</label><div class="valrow"><input class="inp" id="fVal" inputmode="decimal" autocomplete="off" value="${esc(u.val??'')}"><span class="unit">${esc(s.plage?.unit||'')}</span></div></div>`;
   if(s.type==='minuterie'){ const x=timerOf(t,f); if(x) h+=`<div class="card"><div class="countdown" id="cd" data-key="${esc(x.key)}">${x.due||x.acked?'00:00':fmtDur((x.endAt-Date.now())/1000)}</div>${x.due?'<div class="note bad">Temps écoulé</div>':''}</div>`; }
-  if(u.problem) h+=`<div class="note bad">${inl(u.problem)}</div>`;
+  if(u.problem) h+=`<div class="note bad">${inl(u.problem)}</div>`+(s.crit==='sécurité'?`<div class="note bad small">⛑ Étape de sécurité : impossible de continuer tant que le point n’est pas corrigé. Si le chantier ne peut pas se poursuivre, relâcher la tâche et prévenir le responsable.</div>`:'');
   if(u.needComment||s.type!=='info'){ const req=u.needComment&&s.commentReq;
     h+=`<label class="fld" for="fCom">${u.needComment?(req?'Commentaire (obligatoire)':'Commentaire sur l’anomalie (facultatif)'):'Remarque (facultatif)'}</label><textarea class="inp" id="fCom" placeholder="…">${esc(u.com??'')}</textarea>`; }
   h+=`<div class="btnrow noprint" style="margin-top:14px"><button class="btn ghost sm" data-act="board">‹ Tableau</button><button class="btn ghost sm" data-act="release">Relâcher la tâche</button></div>`;
@@ -1232,6 +1243,7 @@ function renderStep(){
 function stepActions(t,f){
   const s=f.step,u=uiState,pos=taskPos(t),prev=pos>0?`<button class="btn ghost" data-act="prev" style="flex:0 0 30%">‹ Préc.</button>`:'';
   let main='';
+  if(u.forceMode&&s.crit==='sécurité') return `<div class="btnrow">${prev}<button class="btn primary" data-act="retry">Corriger puis refaire</button></div>`;
   if(u.forceMode) return `<div class="btnrow">${prev}<button class="btn" data-act="retry">Corriger / refaire</button></div><button class="btn bad" data-act="force">Consigner l’anomalie et continuer</button>`;
   switch(s.type){
     case 'action': main=`<button class="btn ok" data-act="done">✓ Fait</button>`; break;
@@ -1293,12 +1305,58 @@ function drawGantt(P,inCh,maxL){
 function rr(x,a,b,w,h,r){ x.beginPath(); if(x.roundRect){ x.roundRect(a,b,w,h,r); } else { x.rect(a,b,w,h); } }
 window.addEventListener('resize',()=>{ if(view==='phases') render(); });
 
+/* ---------- Dépannage : codes d'erreur (sources : Error_Codes_V3, mode d'emploi m-tec) ---------- */
+const DEP=[
+ ['MaxiPrinter (IHM)',[
+  ['000010','IHM déconnectée','Remettre la fenêtre IHM au premier plan ou la relancer ; vérifier le câble RJ45.'],
+  ['000020','Pompe sortie du mode automatique pendant l’impression','Voyant rouge : câble machine–pompe, pompe allumée ? Voyant orange : réglages du panneau de la pompe.'],
+  ['00003X','Erreur moteur ou servovalve de l’axe X (hydraulique, surchauffe, moteur de tête bloqué)','Réarmer l’alarme ; si elle persiste, appeler C3D.'],
+  ['00004X','Erreur de poursuite : l’axe X n’a pas atteint sa position (blocage, choc, vitesse trop élevée)','Chercher une collision ; baisser la vitesse.'],
+  ['000050','Pression matériau maximale atteinte','Tuyau bouché ? Augmenter la pression max seulement si justifié.'],
+  ['00006X','Limite de l’axe X atteinte','Trajectoire trop proche ou trop loin de la machine : recalculer le pathfinder dans le slicer.'],
+  ['000070','Erreur de déploiement de la tête','Déverrouiller la tête ; 5e axe bloqué (le désactiver, passer en buse ronde) ; câble inclinomètre – IO-Link.'],
+  ['000080','Erreur du PLC de sécurité','Arrêts d’urgence enfoncés ? Sinon appeler C3D.'],
+  ['000090','Erreur de tête d’impression','Axe bloqué ? Sinon appeler C3D.'],
+  ['000110','Erreur d’initialisation','Disjoncteurs ; LED EtherCAT (codeur axe 1) ; câbles verts ; PLC de sécurité sans rouge clignotant.'],
+  ['000120','Erreur système','Appeler C3D.'],
+  ['000130','Erreur EtherCAT','Câbles et connecteurs verts (capteurs, moteurs, vannes).'],
+  ['000140','Variateur de la pompe hydraulique','Câble d’alimentation ; présence des 3 phases.'],
+  ['000150','Filtre à huile colmaté','Remplacer le filtre, puis vérifier son câblage.']]],
+ ['Pompe duo-mix (afficheur)',[
+  ['(rien)','Aucun affichage','Fusibles, câble et raccords d’alimentation.'],
+  ['----','Démarrage de la commande (≈ 15 s)','Attendre l’affichage « 0 ».'],
+  ['1','Pression d’eau nulle ou trop faible (< 2,5 bar)','Arrivée d’eau, connecteur de la pompe à eau, tamis d’arrivée ; pompe à eau défectueuse possible.'],
+  ['2','Disjoncteur moteur','Consistance trop ferme → ajuster ; stator trop serré → desserrer ; embout bouché → nettoyer ; rotor bloqué → alterner marche avant / arrière ; rotor et stator usés → remplacer ; après transport → réarmer Q2–Q4.'],
+  ['1 3 / 2 3','Pompe de malaxage','Tube de malaxage mal verrouillé.'],
+  ['4','Manque de matériau sec','Recharger le silo, puis acquitter avec le bouton double.'],
+  ['5','Défaut du variateur','Couper, attendre, relancer ; si persistant, SAV.'],
+  ['6','Veille en mode remote','Normal en commande à distance. ⚠ La pompe peut redémarrer seule : consigner avant toute intervention.'],
+  ['7','Sonde humide couverte trop longtemps ou débranchée','Nettoyer ou rebrancher la sonde.'],
+  ['8','OPC-UA (bit de vie)','Liaison pompe – machine.'],
+  ['9','Arrêt d’urgence externe','Vérifier la chaîne d’arrêt d’urgence.']]],
+ ['Autres situations pompe',[
+  ['Bouchon','Le matériau ne sort plus, pression qui monte','Arrêt immédiat, mode local, marche arrière jusqu’à dépressurisation, principal sur « 0 », désaccoupler sous bâche, nettoyer.'],
+  ['Débit d’eau','Impossible à régler','Tamis du détendeur encrassé, détendeur à remettre à 2,0 bar, arrivée du tube de dosage bouchée.'],
+  ['Consistance','Irrégulière','Vis de dosage encrassée : nettoyer à sec.'],
+  ['Débordement','Le tube de malaxage déborde','Sonde humide défectueuse ou débranchée.']]]
+];
+function renderDepannage(){
+  header('Dépannage','Codes d’erreur et conduite à tenir',null);
+  const q=noAcc(uiState.q||'');
+  let h=`<div class="card"><input class="inp" id="fDep" placeholder="Rechercher un code ou un mot…" value="${esc(uiState.q||'')}" autocomplete="off"></div><div class="card dep">`;
+  DEP.forEach(([g,rows])=>{ const R=rows.filter(r=>!q||noAcc(r.join(' ')).includes(q)); if(!R.length) return;
+    h+=`<h3>${esc(g)}</h3>`+R.map(([c,m,a])=>`<div class="row"><span class="code">${esc(c)}</span> – <b>${esc(m)}</b><div class="small">${esc(a)}</div></div>`).join(''); });
+  h+=`</div><div class="note small">SAV Constructions-3D : sav@constructions-3d.com · WhatsApp +33 3 74 01 03 75</div>`;
+  $('#app').innerHTML=h; setBar(`<button class="btn" data-act="${CID?'board':'home'}">‹ Retour</button>`);
+}
+document.addEventListener('input',e=>{ if(e.target.id==='fDep'){ uiState.q=e.target.value; const pos=e.target.selectionStart; renderDepannage(); const n=$('#fDep'); n.focus(); n.setSelectionRange(pos,pos); } });
+
 /* ---------- Consultation ---------- */
 function renderBrowse(){
   const PP=PUB.parsed;
   if(uiState.i==null){ header('Consultation',`v${PP.meta.version||'?'} · ${PP.flat.length} étapes`,null);
     let h='<div class="card list">'; PP.phases.forEach((p,pi)=>{ h+=`<div class="phase-sec">${p.num}. ${esc(p.name)}</div>`;
-      p.steps.forEach((s,si)=>{ const idx=PP.flat.findIndex(x=>x.p===pi&&x.s===si); h+=`<button class="li" data-bgo="${idx}"><span class="badge b-${s.type}" style="flex:none">${esc(s.type.slice(0,4))}</span><span>${inl(s.title)}</span></button>`; }); });
+      p.steps.forEach((s,si)=>{ const idx=PP.flat.findIndex(x=>x.p===pi&&x.s===si); h+=`<button class="li" data-bgo="${idx}"><span class="badge b-${s.type}" style="flex:none">${esc(s.type.slice(0,4))}</span><span>${critIcon(s.crit)}${inl(s.title)}</span></button>`; }); });
     $('#app').innerHTML=h+'</div>'; setBar(`<button class="btn" data-act="${CID?'board':'home'}">‹ Retour</button>`); return; }
   const f=PP.flat[uiState.i]; header(f.step.title,`Consultation · ${uiState.i+1}/${PP.flat.length}`,(uiState.i+1)/PP.flat.length);
   $('#app').innerHTML=stepBody(f,true);
@@ -1356,7 +1414,8 @@ function openMenu(){
     <button class="mi" data-menu="home">🏠 Accueil</button>
     ${CID&&CH?`<button class="mi" data-menu="board">📋 Tableau du chantier</button><button class="mi" data-menu="journal">🗒 Journal</button>`:''}
     <button class="mi" data-menu="levels">📊 Séquencement</button>
-    <button class="mi" data-menu="browse">📖 Consulter la procédure</button><hr>
+    <button class="mi" data-menu="browse">📖 Consulter la procédure</button>
+    <button class="mi" data-menu="depannage">🛠 Dépannage (codes d’erreur)</button><hr>
     <button class="mi" data-menu="reload">🔄 Recharger (vider le cache)</button>
     ${CID?`<button class="mi" data-menu="leave">↩ Quitter le chantier (il reste ouvert)</button>`:''}
     ${CID&&CH&&!CH.closedAt?`<button class="mi danger" data-menu="close">✖ Clôturer le chantier</button>`:''}
@@ -1374,6 +1433,7 @@ async function menuAction(el){
     case 'board': curTid=null; go('board'); break;
     case 'journal': go('journal'); break;
     case 'levels': go('phases'); break;
+    case 'depannage': go('depannage'); break;
     case 'browse': view='browse'; uiState={}; render(); window.scrollTo(0,0); break;
     case 'leave': leaveChantier(); break;
     case 'close': await closeChantier(); go('journal'); break;
@@ -1436,7 +1496,7 @@ document.addEventListener('click',async e=>{
     case 'chk': recordStep(t,f,'ok',`${u.checks.length}/${u.checks.length}`,com,{checks:u.checks}); return;
     case 'chkpart': { const n=u.checks.filter(Boolean).length; u.problem=`Checklist incomplète : ${n}/${u.checks.length} élément(s) coché(s).`; u.forceMode=true; u.needComment=true; u.kind='chk'; render(); return; }
     case 'retry': u.problem=null; u.forceMode=false; u.needComment=false; render(); return;
-    case 'force': { if(!com&&s.commentReq){ toast('Commentaire obligatoire pour cette étape'); $('#fCom')?.focus(); return; }
+    case 'force': { if(s.crit==='sécurité'){ toast('Étape de sécurité : corriger avant de continuer'); return; } if(!com&&s.commentReq){ toast('Commentaire obligatoire pour cette étape'); $('#fCom')?.focus(); return; }
       const val=u.kind==='val'?u.forcedVal:u.kind==='non'?'non':u.kind==='chk'?`${u.checks.filter(Boolean).length}/${u.checks.length}`:'';
       recordStep(t,f,'forcé',val,com,u.kind==='chk'?{checks:u.checks}:null); return; }
     case 'tstart': startTimer(t,f); render(); return;
