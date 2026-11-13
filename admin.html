@@ -689,6 +689,7 @@ function rStepForm(pi,si){
   return `<div class="card"><div class="bar" style="margin-top:0"><h2 style="flex:1">${esc(phaseName(p))} › étape ${si+1}</h2>
       <button class="btn" data-pe="moveStep" data-d="-1"${si?'':' disabled'}>↑</button><button class="btn" data-pe="moveStep" data-d="1"${si<p.steps.length-1?'':' disabled'}>↓</button>
       <button class="btn" data-pe="addStep" data-at="after">+ Étape après</button><button class="btn" data-pe="dupStep">Dupliquer</button><button class="btn" data-pe="delStep">Supprimer</button></div>
+    <div class="bar" style="margin:0 0 4px"><label class="small muted" for="peMoveTo">Déplacer vers la phase</label><select class="f" id="peMoveTo" style="width:auto;max-width:100%"><option value="">— choisir —</option>${PROC.model.phases.map((q,qi)=>qi===pi?'':`<option value="${qi}">${qi+1}. ${esc(phaseName(q))}</option>`).join('')}</select><span class="small muted">(placée en fin de phase, puis ↑ ↓)</span></div>
     ${fld('Intitulé','stitle',stepName(s))}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 12px">
       <div><label class="f">Type</label><select class="f" data-pf="type">${TYPE_LIST.map(x=>`<option${x===T?' selected':''}>${x}</option>`).join('')}</select></div>
@@ -744,7 +745,10 @@ document.addEventListener('input',e=>{
   if(t.dataset.pf&&t.tagName!=='SELECT'){ peField(t.dataset.pf,t.value); rePrev(); if(['stitle','pname','debut','fin'].includes(t.dataset.pf)){ const ae=document.activeElement, pf=ae&&ae.dataset.pf, pos=ae&&ae.selectionStart; render(); const n=pf&&document.querySelector(`[data-pf="${pf}"]`); if(n){ n.focus(); try{n.setSelectionRange(pos,pos);}catch(_){} } } return; }
   if(t.dataset.item!=null){ if(!t.value.trim()) return; const b=curBlock(), it=getItems(b.lines); it[+t.dataset.item]=t.value.trim(); setItems(b.lines,it); procCommit('Modifié : '+b.name); rePrev(); }
 });
-document.addEventListener('change',e=>{ const t=e.target; if(t.dataset.pf&&t.tagName==='SELECT'){ peField(t.dataset.pf,t.value); render(); } });
+document.addEventListener('change',e=>{ const t=e.target; if(t.dataset.pf&&t.tagName==='SELECT'){ peField(t.dataset.pf,t.value); render(); }
+  if(t.id==='peMoveTo'&&t.value!==''){ const s=PROC.sel, M=PROC.model, from=M.phases[s.p], to=M.phases[+t.value], st=from.steps.splice(s.s,1)[0];
+    nextBlank(to.steps.length?to.steps[to.steps.length-1].lines:to.body); nextBlank(st.lines); to.steps.push(st);
+    PROC.sel={p:+t.value,s:to.steps.length-1}; procCommit(`Déplacé : ${stepName(st)} vers ${phaseName(to)}`); render(); toast(`« ${stepName(st)} » déplacée en fin de « ${phaseName(to)} »`,3500); } });
 document.addEventListener('keydown',e=>{ if(e.target.id==='peNewItem'&&e.key==='Enter'){ e.preventDefault(); document.querySelector('[data-pe="itemAdd"]')?.click(); } });
 function nextBlank(arr){ if(arr.length&&arr[arr.length-1].trim()) arr.push(''); }
 document.addEventListener('click',async ev=>{
