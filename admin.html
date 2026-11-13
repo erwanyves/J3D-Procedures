@@ -128,6 +128,24 @@ async function loadAll(){
   ACT={}; (await F.getDocs(F.collection(db,'actions'))).docs.forEach(d=>ACT[d.id]={id:d.id,...d.data()});
   MNT={}; (await F.getDocs(F.collection(db,'maintenance'))).docs.forEach(d=>MNT[d.id]=d.data());
 }
+const DELSEL=new Set();   // chantiers cochés pour suppression
+/* Suppression définitive d'un chantier : son journal (sous-collection log) puis le document */
+async function deleteChantier(id){
+  if(DB.mock){ CH=CH.filter(c=>c.id!==id); DELSEL.delete(id); return; }
+  const {F,db}=DB; const logs=(await F.getDocs(F.collection(db,'chantiers',id,'log'))).docs;
+  for(let i=0;i<logs.length;i+=400){ const b=F.writeBatch(db); logs.slice(i,i+400).forEach(d=>b.delete(d.ref)); await b.commit(); }
+  await F.deleteDoc(F.doc(db,'chantiers',id)); CH=CH.filter(c=>c.id!==id); DELSEL.delete(id);
+}
+async function confirmDelete(ids){
+  const L=CH.filter(c=>ids.includes(c.id)); if(!L.length) return;
+  const open=L.filter(c=>!c.closedAt).length, unsaved=L.filter(c=>c.closedAt&&!c.collected).length;
+  const msg=`Supprimer définitivement ${L.length>1?`ces ${L.length} chantiers`:'ce chantier'} ?\n\n${L.map(c=>`• ${c.name} (${fmtD(c.createdAt)}, ${(c.log||[]).length} lignes de journal)`).join('\n')}`+
+    (open?`\n\n⚠ ${open} chantier(s) encore ouvert(s) : les téléphones qui les affichent reviendront à l’accueil.`:'')+
+    (unsaved?`\n⚠ ${unsaved} journal(aux) clôturé(s) non collecté(s) : ils seront perdus.`:'')+'\n\nCette suppression est irréversible.';
+  if(!confirm(msg)) return;
+  let n=0; for(const c of L){ try{ await deleteChantier(c.id); n++; }catch(e){ toast(`Échec pour « ${c.name} » : ${e.message}`,6000); break; } }
+  render(); if(n) toast(`${n} chantier${n>1?'s':''} supprimé${n>1?'s':''}`,3500);
+}
 async function saveChantier(id,fields){
   const c=CH.find(x=>x.id===id); Object.assign(c,fields);
   if(DB.mock) return; const {F,db}=DB; await F.updateDoc(F.doc(db,'chantiers',id),fields);
@@ -314,15 +332,15 @@ function rChantiers(){
     const ops=[...new Set((c.log||[]).map(e=>e.by).filter(Boolean))];
     const cc=c.collected||{}, nm=(cc.dbx||cc.path||'').split('/').pop();
     const dep=isCollected(c)?`<span class="tag ok">déposé</span> <span class="small muted">${esc(nm)}${cc.dbx?' · Dropbox':''}${cc.path?' · GitHub':''}</span>${(c.log||[]).length>c.collected.logCount?' <span class="tag warn">journal modifié depuis</span>':''}`:c.closedAt?'<span class="tag bad">à collecter</span>':'<span class="tag">en cours</span>';
-    return `<tr><td><b>${esc(c.name)}</b><div class="small muted">v${esc(c.procVersion||'?')}</div></td><td>${fmtD(c.createdAt)}</td><td>${c.closedAt?fmtD(c.closedAt):'—'}</td>
+    return `<tr><td><label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-delsel="${c.id}"${DELSEL.has(c.id)?' checked':''} style="margin-top:4px"><span><b>${esc(c.name)}</b><div class="small muted">v${esc(c.procVersion||'?')}</div></span></label></td><td>${fmtD(c.createdAt)}</td><td>${c.closedAt?fmtD(c.closedAt):'—'}</td>
       <td class="small">${esc(ops.join(', '))}</td><td class="num">${(c.log||[]).length}</td><td class="num">${nA||''}</td><td>${dep}</td>
-      <td style="white-space:nowrap"><button class="btn" data-push="${c.id}"${canSend()?'':' disabled'}>${c.collected?'Renvoyer':'Envoyer'}</button> <button class="btn" data-dl="${c.id}" title="Télécharger le CSV">⬇</button></td></tr>`; }).join('');
+      <td style="white-space:nowrap"><button class="btn" data-push="${c.id}"${canSend()?'':' disabled'}>${c.collected?'Renvoyer':'Envoyer'}</button> <button class="btn" data-dl="${c.id}" title="Télécharger le CSV">⬇</button> <button class="btn" data-del="${c.id}" title="Supprimer ce chantier">🗑</button></td></tr>`; }).join('');
   return `<div class="card"><h2>Collecte des journaux</h2>
     <div class="muted small">Destination : <b>${esc(destTxt())}</b>${useDbx()?` (Dropbox : Applications/J3D/${esc(CFG.dbxDir)}/)`:''} · fichiers <code>AAAA-MM-JJ-NomDeChantier.csv</code> (date de début du chantier)</div>
     ${!canSend()?'<div class="note warn">Connecter Dropbox (ou renseigner le jeton GitHub) dans l’onglet <b>Réglages</b> pour activer l’envoi.</div>':''}
     <div class="bar"><button class="btn pri" data-act="collect"${pend.length&&canSend()?'':' disabled'}>Collecter les clôturés (${pend.length})</button>
     ${stale.length?`<button class="btn" data-act="restale"${canSend()?'':' disabled'}>Renvoyer les journaux modifiés (${stale.length})</button>`:''}
-    <button class="btn" data-act="reload">↻ Actualiser</button></div><div id="prog" class="small muted"></div></div>
+    <button class="btn" data-act="reload">↻ Actualiser</button>${DELSEL.size?`<button class="btn" data-act="delSel" style="border-color:var(--bad);color:var(--bad)">🗑 Supprimer la sélection (${DELSEL.size})</button>`:''}</div><div id="prog" class="small muted"></div></div>
     <div class="card scroll"><table><thead><tr><th>Chantier</th><th>Début</th><th>Clôture</th><th>Opérateurs</th><th class="num">Lignes</th><th class="num">Anomalies</th><th>Dépôt</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="muted">Aucun chantier.</td></tr>'}</tbody></table></div>`;
 }
 function rAnomalies(){
@@ -819,6 +837,7 @@ document.addEventListener('click',async ev=>{
   const b=ev.target.closest('button,[data-incl]'); if(!b) return;
   if(b.dataset.view){ view=b.dataset.view; render(); return; }
   if(b.dataset.afilter){ LS.set('afilter',b.dataset.afilter); render(); return; }
+  if(b.dataset.del){ await confirmDelete([b.dataset.del]); return; }
   if(b.dataset.dl){ const c=CH.find(x=>x.id===b.dataset.dl); download(fileBase(c)+'.csv',csvOf(c)); return; }
   if(b.dataset.push){ const c=CH.find(x=>x.id===b.dataset.push); b.disabled=true; b.textContent='Envoi…';
     try{ const p=await pushChantier(c); toast(`Déposé : ${p}`,4000); }catch(e){ toast(e.message,6000); } render(); return; }
@@ -830,6 +849,7 @@ document.addEventListener('click',async ev=>{
     case 'collect': b.disabled=true; await collect(CH.filter(c=>c.closedAt&&!isCollected(c))); return;
     case 'restale': b.disabled=true; await collect(CH.filter(c=>c.collected&&(c.log||[]).length>c.collected.logCount)); return;
     case 'reload': await refresh(); toast('Données actualisées'); return;
+    case 'delSel': await confirmDelete([...DELSEL]); return;
     case 'inclAll': INCL=CH.map(c=>c.id); LS.set('incl',INCL); render(); return;
     case 'inclClosed': INCL=null; LS.set('incl',null); render(); return;
     case 'saveCfg': readCfg(); LS.set('cfg',CFG); toast('Réglages enregistrés'); render(); return;
@@ -853,6 +873,7 @@ document.addEventListener('click',async ev=>{
 });
 document.addEventListener('change',async ev=>{
   const t=ev.target;
+  if(t.dataset.delsel){ t.checked?DELSEL.add(t.dataset.delsel):DELSEL.delete(t.dataset.delsel); render(); return; }
   if(t.dataset.incl){ const s=new Set(inclIds()); t.checked?s.add(t.dataset.incl):s.delete(t.dataset.incl); INCL=[...s]; LS.set('incl',INCL); render(); return; }
   const box=t.closest('[data-aid]'); if(box&&t.dataset.k){
     const g=synth().groups.find(x=>x.id===box.dataset.aid)||ACT[box.dataset.aid]; const a={...actionOf(g),key:g.key,phase:g.phase,title:g.title};
