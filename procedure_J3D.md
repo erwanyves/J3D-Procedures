@@ -1,7 +1,7 @@
 ---
 procedure: Mise en œuvre imprimante béton J3D
-version: 0.4
-date: 2026-11-09
+version: 0.5
+date: 2026-11-13
 statut: ébauche – à relire
 ---
 
@@ -114,9 +114,11 @@ Type: checklist
 <!-- À COMPLÉTER : liste outillage -->
 - [ ] Tuyau d'eau 25 m (raccord GEKA)
 - [ ] Masse
-- [ ] Brosse de nettoyage (pompe, vis, raccords)
-- [ ] Balles de nettoyage
+- [ ] Brosse de nettoyage (pompe, vis, raccords) (2)
+- [ ] Balles de nettoyage (2)
 - [ ] Table (IHM)
+- [ ] Chaises pliantes (3)
+- [ ] Tonnelle (en cas de pluie pour IHM)
 - [ ] EPI : casque à visière (ou casque + lunettes)
 - [ ] EPI : gants (et gants épais pour les pattes)
 - [ ] EPI : chaussures de sécurité, vêtements de chantier, gilet haute visibilité
