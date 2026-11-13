@@ -64,6 +64,13 @@ input.f{width:100%;max-width:520px;border:1px solid var(--line);border-radius:8p
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips label{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;cursor:pointer;background:var(--card)}
 .chips input{margin-right:5px}
+.pe-grid{display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:12px;align-items:start}
+@media (max-width:760px){ .pe-grid{grid-template-columns:1fr} }
+.pe-tree{max-height:78vh;overflow:auto;padding:10px}
+.pe-ph{margin-bottom:8px} .pe-row{display:flex;gap:6px;align-items:center;padding:6px 8px;border-radius:6px;cursor:pointer}
+.pe-st{padding:4px 8px 4px 22px;border-radius:6px;cursor:pointer;font-size:14px}
+.pe-row:hover,.pe-st:hover{background:var(--info-bg)} .pe-ph.on>.pe-row,.pe-st.on{background:var(--accent);color:var(--accent-fg)}
+select.f,textarea.f{border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--card);width:100%}
 #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--top);color:var(--top-fg);padding:9px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
 #toast.on{opacity:1}
 a{color:var(--bar)}
@@ -285,7 +292,7 @@ const occLine=(c,e,extra='')=>`<div class="occ"><b>${esc(c.name)}</b> <span clas
 function nav(){
   const S=synth(); const pend=CH.filter(c=>c.closedAt&&!isCollected(c)).length;
   const todo=S.groups.filter(g=>{const a=actionOf(g); return a.status==='à traiter'||a.status==='en cours'||isNew(g,a);}).length;
-  const tabs=[['chantiers','Chantiers',pend],['anomalies','Anomalies',S.groups.filter(g=>g.anoms.length).length],['commentaires','Commentaires',S.groups.filter(g=>g.comments.length).length],['durees','Durées',0],['actions','Suivi des actions',todo],['maintenance','Maintenance',mntCount()],['reglages','Réglages',canSend()?0:'!']];
+  const tabs=[['chantiers','Chantiers',pend],['anomalies','Anomalies',S.groups.filter(g=>g.anoms.length).length],['commentaires','Commentaires',S.groups.filter(g=>g.comments.length).length],['durees','Durées',0],['actions','Suivi des actions',todo],['maintenance','Maintenance',mntCount()],['procedure','Procédure',procDirty()?'●':0],['reglages','Réglages',canSend()?0:'!']];
   $('#nav').innerHTML=tabs.map(([k,l,n])=>`<button data-view="${k}" class="${view===k?'on':''}">${l}${n?`<span class="n">${n}</span>`:''}</button>`).join('');
 }
 function inclChips(){
@@ -296,7 +303,7 @@ function inclChips(){
 }
 function render(){
   nav(); LS.set('view',view);
-  const R={chantiers:rChantiers,anomalies:rAnomalies,commentaires:rComments,durees:rDurees,actions:rActions,maintenance:rMaintenance,reglages:rReglages}[view]||rChantiers;
+  const R={chantiers:rChantiers,anomalies:rAnomalies,commentaires:rComments,durees:rDurees,actions:rActions,maintenance:rMaintenance,procedure:rProcedure,reglages:rReglages}[view]||rChantiers;
   $('#app').innerHTML=R();
 }
 function rChantiers(){
@@ -374,6 +381,7 @@ function rReglages(){
     <label class="f">Branche</label><input class="f" id="cBranch" value="${esc(CFG.branch)}">
     <label class="f">Dossier</label><input class="f" id="cDir" value="${esc(CFG.dir)}">
     <label class="f">Jeton d’accès (fine-grained)</label><input class="f" id="cTok" type="password" autocomplete="off" value="${esc(CFG.token)}" placeholder="github_pat_…">
+    <label class="f">Jeton pour publier la procédure (dépôt J3D-Procedures, Contents : Read and write) – vide = même jeton que ci-dessus</label><input class="f" id="cProcTok" type="password" autocomplete="off" value="${esc(CFG.procToken||'')}" placeholder="github_pat_…">
     <label class="f">Votre nom (pour le suivi des actions)</label><input class="f" id="cAdm" value="${esc(CFG.admin)}">
     <div class="bar" style="margin-top:12px"><button class="btn pri" data-act="saveCfg">Enregistrer</button><button class="btn" data-act="testGh">Tester l’accès</button><button class="btn" data-act="forget">Oublier le jeton</button></div>
     <div id="ghRes"></div></div>`;
@@ -439,9 +447,364 @@ function rMaintenance(){
     <div class="small muted" style="margin-top:6px">* selon le matériau utilisé. Silo : entretien sans intervalle chiffré (charnière, clapet, joint, évent, pieds et goupilles).</div></div>`;
 }
 
+
+/* =====================================================================
+   Éditeur de procédure (onglet « Procédure »)
+   - Charge procedure_J3D.md depuis GitHub, l'édite (mode guidé ou texte),
+     le contrôle avec le même parseur que l'appli, puis le publie (commit).
+   - Modèle par lignes : rien n'est réécrit hors des champs modifiés
+     (les commentaires <!-- --> et les lignes inconnues sont conservés).
+   ===================================================================== */
+const inl=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*/g,'$1<em>$2</em>');
+const noAcc=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isNaN(n)?null:n;};
+const CRIT={securite:'sécurité',machine:'machine',qualite:'qualité'};
+const CRIT_UI={'sécurité':['crit-securite','⛑','Sécurité'],'machine':['crit-machine','⚙','Machine'],'qualité':['crit-qualite','◎','Qualité']};
+const critBadge=c=>c&&CRIT_UI[c]?`<span class="crit ${CRIT_UI[c][0]}">${CRIT_UI[c][1]} ${CRIT_UI[c][2]}</span>`:'';
+const critIcon=c=>c&&CRIT_UI[c]?`<span class="ci" title="${CRIT_UI[c][2]}">${CRIT_UI[c][1]}</span>`:'';
+const TYPES={action:'action',controle:'contrôle',valeur:'valeur',avertissement:'avertissement',minuterie:'minuterie',checklist:'checklist',info:'info'};
+function parseDuree(v){const m=noAcc(v).match(/([\d.,]+)\s*(h|min|mn|m|s)?/);if(!m)return null;const n=num(m[1]),u=m[2]||'min';return u==='h'?n*3600:u==='s'?n:n*60;}
+function parsePlage(v){
+  const N='(-?\\d+(?:[.,]\\d+)?)';
+  let t=String(v).trim().replace(/^(?:de|entre|from|between)\s+/i,''); let m;
+  if((m=t.match(new RegExp('^'+N+'\\s*(?:\\.\\.\\.?|à|a|et|-|–|—|to|/)\\s*'+N+'\\s*(.*)$','i')))) return {min:num(m[1]),max:num(m[2]),unit:m[3].trim()};
+  if((m=t.match(new RegExp('^'+N+'\\s*(?:±|\\+/-|\\+-)\\s*'+N+'\\s*(.*)$')))) return {min:num(m[1])-num(m[2]),max:num(m[1])+num(m[2]),unit:m[3].trim()};
+  if((m=t.match(new RegExp('^(?:<=?|≤|max(?:i(?:mum)?)?\\.?|inf[ée]rieur(?:e)?\\s+(?:ou\\s+[ée]gal(?:e)?\\s+)?[àa]|jusqu.[àa])\\s*'+N+'\\s*(.*)$','i')))) return {min:-Infinity,max:num(m[1]),unit:m[2].trim()};
+  if((m=t.match(new RegExp('^(?:>=?|≥|min(?:i(?:mum)?)?\\.?|sup[ée]rieur(?:e)?\\s+(?:ou\\s+[ée]gal(?:e)?\\s+)?[àa]|au\\s+moins)\\s*'+N+'\\s*(.*)$','i')))) return {min:num(m[1]),max:Infinity,unit:m[2].trim()};
+  if((m=t.match(new RegExp('^'+N+'\\s*(.*?)\\s*(mini?|minimum|maxi?|maximum)\\.?$','i')))){const isMin=/^min/i.test(m[3]);return isMin?{min:num(m[1]),max:Infinity,unit:m[2].trim()}:{min:-Infinity,max:num(m[1]),unit:m[2].trim()};}
+  if((m=t.match(new RegExp('^'+N+'\\s*([^\\d]*)$')))) return {min:num(m[1]),max:num(m[1]),unit:m[2].trim()};
+  return null;
+}
+function plageTxt(pl){const u=pl.unit?' '+pl.unit:'';if(pl.min===-Infinity)return `≤ ${pl.max}${u}`;if(pl.max===Infinity)return `≥ ${pl.min}${u}`;if(pl.min===pl.max)return `${pl.min}${u}`;return `${pl.min} à ${pl.max}${u}`;}
+function parseMD(text){
+  const warnings=[],meta={},phases=[];
+  let src=String(text||'').replace(/\r\n?/g,'\n').replace(/<!--[\s\S]*?-->/g,m=>m.replace(/[^\n]/g,''));
+  const lines=src.split('\n'); let i=0;
+  if(lines[0]&&lines[0].trim()==='---'){i=1;while(i<lines.length&&lines[i].trim()!=='---'){const m=lines[i].match(/^\s*([^:]+?)\s*:\s*(.*)$/);if(m)meta[noAcc(m[1])]=m[2].trim();i++;}i++;}
+  let ph=null,st=null;
+  for(;i<lines.length;i++){
+    const raw=lines[i],ln=i+1,l=raw.trim(); if(!l) continue; let m;
+    if((m=raw.match(/^#\s+(.+)$/))){ph={name:m[1].replace(/^Phase\s*:\s*/i,'').trim(),line:ln,steps:[],text:[],notes:[]};phases.push(ph);st=null;continue;}
+    if((m=raw.match(/^##\s+(.+)$/))){
+      if(!ph){warnings.push({line:ln,msg:'Étape avant toute phase'});ph={name:'(sans phase)',line:ln,steps:[],text:[],notes:[]};phases.push(ph);}
+      const t=m[1].trim(),mm=t.match(/^(\d+(?:\.\d+)*[a-z]?)\s+(.+)$/i);
+      st={num:mm?mm[1]:'',title:mm?mm[2]:t,type:'action',typeSet:false,line:ln,text:[],notes:[],items:[],images:[]};ph.steps.push(st);continue;}
+    if(/^#{3,}\s/.test(raw)){warnings.push({line:ln,msg:'Titre ### non géré (utiliser # pour une phase, ## pour une étape)'});continue;}
+    if(!ph) continue;
+    const tgt=st||ph;
+    if((m=l.match(/^([A-Za-zÀ-ÿ ]+?)\s*:\s*(.*)$/))){
+      const k=noAcc(m[1]),v=m[2].trim();let used=true;
+      switch(k){
+        case 'type':{const t=TYPES[noAcc(v)];if(st){if(t){st.type=t;st.typeSet=true;}else warnings.push({line:ln,msg:`Type inconnu « ${v} »`});}break;}
+        case 'plage':{const pl=parsePlage(v);if(pl&&st)st.plage=pl;else warnings.push({line:ln,msg:`Plage illisible « ${v} » (ex. : 7..9 bar, de 0 à 13 cm, 28 ±1 cm, ≥ 45 °, 13 cm max)`});break;}
+        case 'duree':{const d=parseDuree(v);if(d===null)warnings.push({line:ln,msg:`Durée illisible « ${v} »`});tgt.duree=d;tgt.dureeTxt=v;break;}
+        case 'si non':tgt.siNon=v;break;
+        case 'si hors plage':tgt.siHors=v;break;
+        case 'operateurs':tgt.operateurs=v;break;
+        case 'role':tgt.role=v;break;
+        case 'note':tgt.notes.push(v);break;
+        case 'repeter':tgt.repeat=/^(oui|yes|true|1)/i.test(noAcc(v));break;
+        case 'commentaire':tgt.commentReq=/oblig/i.test(noAcc(v));break;
+        case 'criticite':{const c=CRIT[noAcc(v)];if(c)tgt.crit=c;else warnings.push({line:ln,msg:`Criticité inconnue « ${v} » (sécurité, machine ou qualité)`});break;}
+        case 'debut':{const n=parseInt(v,10);if(isNaN(n))warnings.push({line:ln,msg:`Début illisible « ${v} »`});else tgt.debut=n;break;}
+        case 'fin':{const n=parseInt(v,10);if(isNaN(n))warnings.push({line:ln,msg:`Fin illisible « ${v} »`});else tgt.fin=n;break;}
+        default:used=false;
+      }
+      if(used) continue;
+    }
+    if((m=l.match(/^[-*]\s+\[[ xX]\]\s+(.+)$/))){if(st)st.items.push(m[1]);else warnings.push({line:ln,msg:'Case à cocher hors étape'});continue;}
+    if((m=l.match(/^!\[([^\]]*)\]\(\s*([^)\s]+)\s*\)/))){if(st)st.images.push({alt:m[1],src:m[2]});else warnings.push({line:ln,msg:'Image hors étape'});continue;}
+    tgt.text.push(l.replace(/^[-*]\s+/,'• '));
+  }
+  phases.forEach(p=>{
+    if(p.fin!=null&&p.debut!=null&&p.fin<p.debut) warnings.push({line:p.line,msg:`Phase « ${p.name} » : Fin < Début`});
+    p.steps.forEach(s=>{
+      const lbl=`Étape « ${s.title} »`;
+      if(!s.typeSet) warnings.push({line:s.line,msg:`${lbl} : pas de « Type: » (action par défaut)`});
+      if(s.type==='valeur'&&!s.plage) warnings.push({line:s.line,msg:`${lbl} : Type valeur sans Plage`});
+      if(s.type==='minuterie'&&!s.duree) warnings.push({line:s.line,msg:`${lbl} : minuterie sans Durée`});
+      if(s.type==='checklist'&&!s.items.length) warnings.push({line:s.line,msg:`${lbl} : checklist sans case « - [ ] »`});
+    });
+  });
+  /* Numéros d'étape facultatifs dans le MD et ignorés : référence automatique <n° phase>.<n° étape>
+     (journal, CSV, rapport) ; non affichée à l'écran, l'ordre suffit. */
+  phases.forEach((p,pi)=>{ p.num=pi+1; p.steps.forEach((s,si)=>{ s.num=`${pi+1}.${si+1}`; }); });
+  const flat=[];phases.forEach((p,pi)=>p.steps.forEach((s,si)=>flat.push({p:pi,s:si,key:`s${pi}_${si}`,phase:p,step:s})));
+  if(!flat.length) warnings.push({line:0,msg:'Aucune étape trouvée'});
+  const tasks=buildTasks(phases);
+  return {meta,phases,flat,tasks,warnings};
+}
+/* Tâches : une phase = une tâche ; une étape portant Début/Fin devient une tâche indépendante.
+   Sans Début/Fin, une tâche prend le niveau suivant la précédente (enchaînement simple). */
+function buildTasks(phases){
+  const tasks=[]; let last=0;
+  const mk=(id,title,ph,steps,src)=>{
+    const debut = src.debut ?? (last+1);
+    const fin = Math.max(debut, src.fin ?? debut);
+    const ops = Math.max(1, parseInt(src.operateurs ?? ph.operateurs ?? 1,10) || 1);
+    const t={id,title,phase:ph,steps,debut,fin,ops,role:src.role||ph.role||''};
+    tasks.push(t); last=fin; return t;
+  };
+  phases.forEach((ph,pi)=>{
+    const rest=[];
+    ph.steps.forEach((st,si)=>{
+      const f={p:pi,s:si,key:`s${pi}_${si}`,phase:ph,step:st};
+      if(st.debut!=null) mk(`t${pi}_${si}`,st.title,ph,[f],st);
+      else rest.push(f);
+    });
+    if(rest.length) mk(`t${pi}`,ph.name,ph,rest,ph);
+  });
+  return tasks;
+}
+
+
+const PROC_REPO='erwanyves/J3D-Procedures', PROC_PATH='procedure_J3D.md';
+let PROC={loaded:false,src:null,sha:null,text:'',model:null,sel:null,mode:LS.get('peMode','guide'),changes:[],parsed:null,busy:false};
+
+/* ---------- modèle par lignes ---------- */
+function mdModel(text){
+  const L=text.split('\n'), m={head:[],phases:[]}; let inC=false, ph=null, st=null;
+  for(const line of L){
+    const isH=!inC&&/^#\s+/.test(line), isS=!inC&&/^##\s+/.test(line);
+    if(!inC&&line.includes('<!--')&&!line.slice(line.indexOf('<!--')).includes('-->')) inC=true; else if(inC&&line.includes('-->')) inC=false;
+    if(isH){ ph={title:line,body:[],steps:[]}; m.phases.push(ph); st=null; continue; }
+    if(isS&&ph){ st={title:line,lines:[]}; ph.steps.push(st); continue; }
+    (st?st.lines:ph?ph.body:m.head).push(line);
+  }
+  return m;
+}
+const mdText=m=>[...m.head,...m.phases.flatMap(p=>[p.title,...p.body,...p.steps.flatMap(s=>[s.title,...s.lines])])].join('\n');
+const KEYS={type:'Type',plage:'Plage',duree:'Durée','si non':'Si non','si hors plage':'Si hors plage',operateurs:'Opérateurs',role:'Rôle',note:'Note',repeter:'Répéter',commentaire:'Commentaire',debut:'Début',fin:'Fin',criticite:'Criticité'};
+function lineKinds(lines){ let inC=false; return lines.map(l=>{ const t=l.trim();
+  if(inC){ if(t.includes('-->')) inC=false; return 'comment'; }
+  if(t.startsWith('<!--')){ if(!t.includes('-->')) inC=true; return 'comment'; }
+  if(!t) return 'blank';
+  const k=t.match(/^([A-Za-zÀ-ÿ ]+?)\s*:\s*(.*)$/); if(k&&KEYS[noAcc(k[1])]) return 'key:'+noAcc(k[1]);
+  if(/^[-*]\s+\[[ xX]\]\s+/.test(t)) return 'item';
+  if(/^!\[[^\]]*\]\(/.test(t)) return 'image';
+  return 'text'; }); }
+const keyVal=l=>l.trim().replace(/^[^:]+:\s*/,'');
+function getKey(lines,k){ const K=lineKinds(lines), i=K.indexOf('key:'+k); return i<0?'':keyVal(lines[i]); }
+function lastIdx(K,pred){ for(let i=K.length-1;i>=0;i--) if(pred(K[i])) return i; return -1; }
+function setKey(lines,k,v){ const K=lineKinds(lines), i=K.indexOf('key:'+k); v=String(v??'').trim();
+  if(i>=0){ if(v) lines[i]=`${KEYS[k]}: ${v}`; else lines.splice(i,1); return; }
+  if(!v) return; const j=lastIdx(K,x=>x.startsWith('key:')); lines.splice(j+1,0,`${KEYS[k]}: ${v}`); }
+function endPos(lines){ let i=lines.length; while(i>0&&!lines[i-1].trim()) i--; return i; }
+function getGroup(lines,kind){ const K=lineKinds(lines); return lines.filter((l,i)=>K[i]===kind); }
+function setGroup(lines,kind,vals,fmt){ const K=lineKinds(lines); let pos=K.indexOf(kind);
+  for(let i=K.length-1;i>=0;i--) if(K[i]===kind) lines.splice(i,1);
+  if(!vals.length) return;
+  if(pos<0){ const K2=lineKinds(lines); pos=kind==='text'||kind==='key:note'?lastIdx(K2,x=>x.startsWith('key:'))+1:endPos(lines); }
+  lines.splice(pos,0,...vals.map(fmt)); }
+const getItems=l=>getGroup(l,'item').map(x=>x.trim().replace(/^[-*]\s+\[[ xX]\]\s+/,''));
+const setItems=(l,v)=>setGroup(l,'item',v,x=>`- [ ] ${x}`);
+const getTexts=l=>getGroup(l,'text').map(x=>x.trim());
+const setTexts=(l,v)=>setGroup(l,'text',v,x=>x);
+const getNotes=l=>getGroup(l,'key:note').map(keyVal);
+const setNotes=(l,v)=>setGroup(l,'key:note',v,x=>`Note: ${x}`);
+const stepName=s=>s.title.replace(/^##\s+/,'').trim();
+const phaseName=p=>p.title.replace(/^#\s+/,'').replace(/^Phase\s*:\s*/i,'').trim();
+
+/* ---------- chargement / état ---------- */
+const b64dec=c=>new TextDecoder().decode(Uint8Array.from(atob(c.replace(/\n/g,'')),ch=>ch.charCodeAt(0)));
+const procTok=()=>CFG.procToken||CFG.token;
+async function ghProc(path,opt={}){
+  const r=await fetch(`https://api.github.com/repos/${PROC_REPO}/${path}`,{...opt,headers:{'Accept':'application/vnd.github+json','Authorization':`Bearer ${procTok()}`,'X-GitHub-Api-Version':'2022-11-28',...(opt.headers||{})}});
+  const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(`GitHub ${r.status} : ${j.message||r.statusText}`); return j;
+}
+async function procFetch(){
+  if(procTok()){ const j=await ghProc(`contents/${PROC_PATH}?ref=main&t=${Date.now()}`); return {text:b64dec(j.content),sha:j.sha}; }
+  const r=await fetch(`https://raw.githubusercontent.com/${PROC_REPO}/main/${PROC_PATH}?${Date.now()}`,{cache:'no-store'}); if(!r.ok) throw new Error('Lecture impossible ('+r.status+')');
+  return {text:await r.text(),sha:null};
+}
+async function procLoad(force){
+  PROC.busy=true; render();
+  try{ const f=await procFetch(); PROC.src=f.text; PROC.sha=f.sha;
+    const d=LS.get('procDraft',null);
+    if(!force&&d&&d.text!==f.text){ if(d.base===f.text){ PROC.text=d.text; PROC.changes=d.changes||[]; toast('Brouillon non publié restauré',3500); }
+      else { PROC.text=f.text; PROC.changes=[]; PROC.oldDraft=d; } }
+    else { PROC.text=f.text; PROC.changes=[]; LS.set('procDraft',null); }
+    PROC.model=mdModel(PROC.text); PROC.loaded=true; procParse(); }
+  catch(e){ toast(e.message,6000); }
+  PROC.busy=false; render();
+}
+function procParse(){ try{ PROC.parsed=parseMD(PROC.text); }catch(e){ PROC.parsed={warnings:[{line:0,msg:'Erreur de lecture : '+e.message}],phases:[],tasks:[],meta:{}}; } }
+const procDirty=()=>PROC.loaded&&PROC.text!==PROC.src;
+function procCommit(note){ PROC.text=mdText(PROC.model); procParse();
+  if(note&&!PROC.changes.includes(note)) PROC.changes.push(note);
+  LS.set('procDraft',procDirty()?{text:PROC.text,base:PROC.src,changes:PROC.changes}:null); }
+
+/* ---------- rendu ---------- */
+const TYPE_LIST=['action','contrôle','valeur','avertissement','minuterie','checklist','info'];
+function rProcedure(){
+  if(!PROC.loaded&&!PROC.busy){ setTimeout(()=>procLoad(false)); return '<div class="card muted">Chargement de la procédure…</div>'; }
+  if(PROC.busy) return '<div class="card muted">Chargement…</div>';
+  const P=PROC.parsed, W=P.warnings||[], meta=P.meta||{};
+  const head=`<div class="card"><div class="bar" style="margin:0">
+      <b>Procédure v${esc(meta.version||'?')}</b><span class="small muted">${esc(meta.date||'')} · ${P.phases.length} phases · ${(P.flat||[]).length} étapes · ${P.tasks.length} tâches</span>
+      ${procDirty()?`<span class="tag warn">${PROC.changes.length||'des'} modification(s) non publiée(s)</span>`:'<span class="tag ok">identique à la version en ligne</span>'}
+      <span style="flex:1"></span>
+      <button class="btn${PROC.mode==='guide'?' pri':''}" data-pe="mode" data-v="guide">Mode guidé</button><button class="btn${PROC.mode==='texte'?' pri':''}" data-pe="mode" data-v="texte">Mode texte</button>
+      <button class="btn" data-pe="reload">↻ Recharger</button>${procDirty()?'<button class="btn" data-pe="discard">Annuler les modifications</button>':''}
+      <button class="btn pri" data-pe="publish"${procDirty()?'':' disabled'}>Publier…</button></div>
+    ${PROC.oldDraft?`<div class="note warn small">Un ancien brouillon a été écarté car la procédure en ligne a changé depuis. <button class="btn" data-pe="restoreOld">Le reprendre quand même</button></div>`:''}
+    ${W.length?`<div class="note warn small"><b>${W.length} remarque(s) de format</b> (affichées aussi sur l’accueil de l’appli) :<br>${W.slice(0,12).map(w=>`ligne ${w.line} : ${esc(w.msg)}`).join('<br>')}${W.length>12?'<br>…':''}</div>`:'<div class="note ok small">Format correct : aucune remarque.</div>'}
+    <div id="pePub"></div></div>`;
+  return head+(PROC.mode==='texte'?rProcTexte():rProcGuide());
+}
+function rProcTexte(){
+  return `<div class="card"><div class="small muted" style="margin-bottom:6px">Le fichier complet. Les remarques de format se mettent à jour pendant la saisie. Conventions rappelées en tête du fichier.</div>
+    <textarea id="peRaw" spellcheck="false" style="width:100%;min-height:70vh;font:13px/1.45 ui-monospace,Consolas,monospace;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--card)">${esc(PROC.text)}</textarea></div>`;
+}
+function rProcGuide(){
+  const M=PROC.model, sel=PROC.sel;
+  const tree=M.phases.map((p,pi)=>{ const pd=getKey(p.body,'debut'), pf=getKey(p.body,'fin');
+    return `<div class="pe-ph${sel&&sel.p===pi&&sel.s==null?' on':''}"><div class="pe-row" data-pe="sel" data-p="${pi}"><b>${pi+1}. ${esc(phaseName(p))}</b>${pd?`<span class="tag">${esc(pd)}${pf&&pf!==pd?'→'+esc(pf):''}</span>`:''}</div>
+      ${p.steps.map((s,si)=>{ const c=getKey(s.lines,'criticite'), sd=getKey(s.lines,'debut');
+        return `<div class="pe-st${sel&&sel.p===pi&&sel.s===si?' on':''}" data-pe="sel" data-p="${pi}" data-s="${si}">${c?(c.startsWith('s')?'⛑ ':c.startsWith('m')?'⚙ ':'◎ '):''}${esc(stepName(s))}${sd?` <span class="tag">${esc(sd)}</span>`:''}</div>`; }).join('')}</div>`; }).join('');
+  return `<div class="pe-grid"><div class="card pe-tree">${tree}<div class="bar"><button class="btn" data-pe="addPhase">+ Phase en fin</button></div></div>
+    <div>${sel?(sel.s==null?rPhaseForm(sel.p):rStepForm(sel.p,sel.s)):'<div class="card muted">Choisir une phase ou une étape à gauche.</div>'}</div></div>`;
+}
+const fld=(lbl,id,val,ph='',attr='')=>`<div><label class="f">${lbl}</label><input class="f" data-pf="${id}" value="${esc(val)}" placeholder="${esc(ph)}" ${attr} style="max-width:none"></div>`;
+const area=(lbl,id,val,ph='',rows=3)=>`<label class="f">${lbl}</label><textarea class="f" data-pf="${id}" rows="${rows}" placeholder="${esc(ph)}" style="width:100%;max-width:none">${esc(val)}</textarea>`;
+function commentsOf(lines){ const K=lineKinds(lines), c=lines.filter((l,i)=>K[i]==='comment'); return c.length?`<div class="note small"><b>Commentaires de travail conservés</b> (non affichés dans l’appli, modifiables en mode texte) :<br><code>${esc(c.join('\n')).replace(/\n/g,'<br>')}</code></div>`:''; }
+function rPhaseForm(pi){
+  const p=PROC.model.phases[pi], b=p.body;
+  return `<div class="card"><div class="bar" style="margin-top:0"><h2 style="flex:1">Phase ${pi+1}</h2>
+      <button class="btn" data-pe="movePhase" data-d="-1"${pi?'':' disabled'}>↑</button><button class="btn" data-pe="movePhase" data-d="1"${pi<PROC.model.phases.length-1?'':' disabled'}>↓</button>
+      <button class="btn" data-pe="addStep" data-at="start">+ Étape au début</button><button class="btn" data-pe="addPhaseAfter">+ Phase après</button><button class="btn" data-pe="delPhase">Supprimer la phase</button></div>
+    ${fld('Nom de la phase','pname',phaseName(p))}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0 12px">
+      ${fld('Début (niveau)','debut',getKey(b,'debut'),'ex. 4','inputmode="numeric"')}${fld('Fin (niveau)','fin',getKey(b,'fin'),'ex. 4','inputmode="numeric"')}
+      ${fld('Opérateurs','operateurs',getKey(b,'operateurs'),'1')}${fld('Rôle','role',getKey(b,'role'),'machine, pompe, IHM…')}${fld('Durée indicative','duree',getKey(b,'duree'),'ex. 20 min')}</div>
+    ${area('Texte d’introduction (une ligne par paragraphe)','texts',getTexts(b).join('\n'))}
+    ${area('Notes encadrées (une par ligne)','notes',getNotes(b).join('\n'),'',2)}
+    ${commentsOf(b)}
+    <div class="small muted" style="margin-top:8px">${p.steps.length} étape(s). Règle : la phase s’ouvre quand toutes les tâches dont la Fin est inférieure à son Début sont validées.</div></div>`;
+}
+function rStepForm(pi,si){
+  const p=PROC.model.phases[pi], s=p.steps[si], L=s.lines, type=noAcc(getKey(L,'type'))||'action', T=TYPES[type]||'action', crit=noAcc(getKey(L,'criticite'));
+  const items=getItems(L), imgs=getGroup(L,'image');
+  const show=(t,html)=>t?html:'';
+  return `<div class="card"><div class="bar" style="margin-top:0"><h2 style="flex:1">${esc(phaseName(p))} › étape ${si+1}</h2>
+      <button class="btn" data-pe="moveStep" data-d="-1"${si?'':' disabled'}>↑</button><button class="btn" data-pe="moveStep" data-d="1"${si<p.steps.length-1?'':' disabled'}>↓</button>
+      <button class="btn" data-pe="addStep" data-at="after">+ Étape après</button><button class="btn" data-pe="dupStep">Dupliquer</button><button class="btn" data-pe="delStep">Supprimer</button></div>
+    ${fld('Intitulé','stitle',stepName(s))}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 12px">
+      <div><label class="f">Type</label><select class="f" data-pf="type">${TYPE_LIST.map(x=>`<option${x===T?' selected':''}>${x}</option>`).join('')}</select></div>
+      <div><label class="f">Criticité</label><select class="f" data-pf="criticite"><option value="">—</option>${['sécurité','machine','qualité'].map(x=>`<option${noAcc(x)===crit?' selected':''}>${x}</option>`).join('')}</select></div>
+      ${fld('Opérateurs','operateurs',getKey(L,'operateurs'))}${fld('Rôle','role',getKey(L,'role'))}
+      ${show(T==='valeur',fld('Plage','plage',getKey(L,'plage'),'7..9 bar, ≥ 2,5 bar, 13 cm max'))}
+      ${show(T==='minuterie',fld('Durée','duree',getKey(L,'duree'),'8 min'))}
+      ${show(T==='minuterie',`<div><label class="f">Alerte périodique</label><select class="f" data-pf="repeter"><option value="">non</option><option${/^o/i.test(getKey(L,'repeter'))?' selected':''}>oui</option></select></div>`)}
+      <div><label class="f">Commentaire en cas d’anomalie</label><select class="f" data-pf="commentaire"><option value="">facultatif</option><option${/oblig/i.test(getKey(L,'commentaire'))?' selected':''} value="obligatoire">obligatoire</option></select></div>
+      ${fld('Tâche indépendante : Début','debut',getKey(L,'debut'),'vide = suit la phase')}${fld('Fin','fin',getKey(L,'fin'))}</div>
+    ${show(T==='contrôle',fld('Si non (conduite à tenir)','sinon',getKey(L,'si non'),'ARRÊT – …'))}
+    ${show(T==='valeur',fld('Si hors plage (conduite à tenir)','sihors',getKey(L,'si hors plage')))}
+    ${area('Consigne (une ligne par paragraphe)','texts',getTexts(L).join('\n'),'',3)}
+    ${area('Notes encadrées (une par ligne)','notes',getNotes(L).join('\n'),'',2)}
+    ${T==='checklist'||items.length?`<label class="f">Cases à cocher (${items.length})</label><div id="peItems">${items.map((x,k)=>`<div class="bar" style="margin:3px 0"><input class="f" data-item="${k}" value="${esc(x)}" style="flex:1;max-width:none">
+        <button class="btn" data-pe="itemMove" data-k="${k}" data-d="-1"${k?'':' disabled'}>↑</button><button class="btn" data-pe="itemMove" data-k="${k}" data-d="1"${k<items.length-1?'':' disabled'}>↓</button><button class="btn" data-pe="itemDel" data-k="${k}">✕</button></div>`).join('')}</div>
+      <div class="bar"><input class="f" id="peNewItem" placeholder="Nouvel élément (ex. Groupe électrogène 20 kVA)" style="flex:1;max-width:none"><button class="btn pri" data-pe="itemAdd">+ Ajouter</button></div>`:''}
+    ${imgs.length?`<div class="small muted" style="margin-top:8px">Images : ${imgs.map(esc).join(' · ')} (modifiables en mode texte)</div>`:''}
+    ${commentsOf(L)}</div>
+    <div class="card"><h3>Aperçu (écran de l’opérateur)</h3><div id="pePrev">${rStepPreview(pi,si)}</div></div>`;
+}
+function rStepPreview(pi,si){
+  const ph=(PROC.parsed.phases||[])[pi], st=ph&&ph.steps[si]; if(!st) return '<div class="muted">—</div>';
+  const C={'sécurité':['bad','⛑ Sécurité'],'machine':['warn','⚙ Machine'],'qualité':['','◎ Qualité']}[st.crit];
+  return `<div style="border:1px solid var(--line);border-radius:12px;padding:12px;${st.crit==='sécurité'?'border-left:5px solid var(--bad)':''}">
+    <span class="tag">${esc(st.type)}</span>${C?` <span class="tag ${C[0]}">${C[1]}</span>`:''}<h3 style="margin:8px 0">${inl(st.title)}</h3>
+    ${st.text.map(x=>`<p style="margin:6px 0">${inl(x)}</p>`).join('')}${st.notes.map(n=>`<div class="note warn small">${inl(n)}</div>`).join('')}
+    ${st.plage?`<div class="note small">Plage : <b>${esc(plageTxt(st.plage))}</b></div>`:''}${st.siNon?`<div class="note warn small">Si non : ${inl(st.siNon)}</div>`:''}
+    ${st.items.map(x=>`<div class="small">☐ ${inl(x)}</div>`).join('')}${st.type==='minuterie'&&st.dureeTxt?`<div class="note small">Durée : <b>${esc(st.dureeTxt)}</b>${st.repeat?' – alerte périodique':''}</div>`:''}</div>`;
+}
+function rePrev(){ const s=PROC.sel, el=$('#pePrev'); if(el&&s&&s.s!=null) el.innerHTML=rStepPreview(s.p,s.s); }
+
+/* ---------- édition ---------- */
+const curBlock=()=>{ const s=PROC.sel; if(!s) return null; const p=PROC.model.phases[s.p]; return s.s==null?{p,lines:p.body,name:'Phase '+phaseName(p)}:{p,s:p.steps[s.s],lines:p.steps[s.s].lines,name:stepName(p.steps[s.s])}; };
+const lines2=v=>String(v).split('\n').map(x=>x.trim()).filter(Boolean);
+function peField(id,val){
+  const b=curBlock(); if(!b) return; const L=b.lines;
+  switch(id){
+    case 'pname': b.p.title=`# Phase : ${val.trim()||'Sans nom'}`; break;
+    case 'stitle': b.s.title=`## ${val.trim()||'Sans titre'}`; break;
+    case 'texts': setTexts(L,lines2(val)); break;
+    case 'notes': setNotes(L,lines2(val)); break;
+    case 'sinon': setKey(L,'si non',val); break;
+    case 'sihors': setKey(L,'si hors plage',val); break;
+    default: setKey(L,id,val);
+  }
+  procCommit('Modifié : '+(b.s?stepName(b.s):'phase '+phaseName(b.p)));
+}
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='peRaw'){ PROC.text=t.value; PROC.model=mdModel(PROC.text); procParse(); if(!PROC.changes.includes('Modifié en mode texte')) PROC.changes.push('Modifié en mode texte');
+    LS.set('procDraft',procDirty()?{text:PROC.text,base:PROC.src,changes:PROC.changes}:null); clearTimeout(PROC._t); PROC._t=setTimeout(()=>{ const pos=t.selectionStart, sc=t.scrollTop; render(); const n=$('#peRaw'); if(n){ n.focus(); n.setSelectionRange(pos,pos); n.scrollTop=sc; } },900); return; }
+  if(t.dataset.pf&&t.tagName!=='SELECT'){ peField(t.dataset.pf,t.value); rePrev(); if(['stitle','pname','debut','fin'].includes(t.dataset.pf)){ const ae=document.activeElement, pf=ae&&ae.dataset.pf, pos=ae&&ae.selectionStart; render(); const n=pf&&document.querySelector(`[data-pf="${pf}"]`); if(n){ n.focus(); try{n.setSelectionRange(pos,pos);}catch(_){} } } return; }
+  if(t.dataset.item!=null){ if(!t.value.trim()) return; const b=curBlock(), it=getItems(b.lines); it[+t.dataset.item]=t.value.trim(); setItems(b.lines,it); procCommit('Modifié : '+b.name); rePrev(); }
+});
+document.addEventListener('change',e=>{ const t=e.target; if(t.dataset.pf&&t.tagName==='SELECT'){ peField(t.dataset.pf,t.value); render(); } });
+document.addEventListener('keydown',e=>{ if(e.target.id==='peNewItem'&&e.key==='Enter'){ e.preventDefault(); document.querySelector('[data-pe="itemAdd"]')?.click(); } });
+function nextBlank(arr){ if(arr.length&&arr[arr.length-1].trim()) arr.push(''); }
+document.addEventListener('click',async ev=>{
+  const b=ev.target.closest('[data-pe]'); if(!b) return; const a=b.dataset.pe, M=PROC.model, s=PROC.sel;
+  switch(a){
+    case 'mode': PROC.mode=b.dataset.v; LS.set('peMode',PROC.mode); render(); return;
+    case 'reload': if(procDirty()&&!confirm('Recharger depuis GitHub ? Les modifications non publiées restent dans le brouillon.')) return; PROC.loaded=false; await procLoad(false); return;
+    case 'discard': if(!confirm('Abandonner toutes les modifications non publiées ?')) return; LS.set('procDraft',null); PROC.text=PROC.src; PROC.changes=[]; PROC.model=mdModel(PROC.text); procParse(); render(); return;
+    case 'restoreOld': PROC.text=PROC.oldDraft.text; PROC.changes=PROC.oldDraft.changes||[]; PROC.oldDraft=null; PROC.model=mdModel(PROC.text); procParse(); procCommit(); render(); return;
+    case 'sel': PROC.sel={p:+b.dataset.p,s:b.dataset.s!=null?+b.dataset.s:null}; render(); return;
+    case 'addPhase': case 'addPhaseAfter': { const at=a==='addPhase'?M.phases.length:s.p+1, prev=M.phases[at-1];
+      if(prev) nextBlank(prev.steps.length?prev.steps[prev.steps.length-1].lines:prev.body);
+      const lv=Math.max(1,...(PROC.parsed.tasks||[]).map(t=>t.fin))+ (a==='addPhase'?1:0);
+      M.phases.splice(at,0,{title:'# Phase : Nouvelle phase',body:[`Début: ${a==='addPhase'?lv:getKey(M.phases[s.p].body,'fin')||lv}`,`Fin: ${a==='addPhase'?lv:getKey(M.phases[s.p].body,'fin')||lv}`,''],steps:[{title:'## Nouvelle étape',lines:['Type: action','','']}]});
+      PROC.sel={p:at,s:null}; procCommit('Ajout : phase'); render(); return; }
+    case 'delPhase': if(!confirm(`Supprimer la phase « ${phaseName(M.phases[s.p])} » et ses ${M.phases[s.p].steps.length} étape(s) ?`)) return;
+      PROC.changes.push('Supprimé : phase '+phaseName(M.phases[s.p])); M.phases.splice(s.p,1); PROC.sel=null; procCommit(); render(); return;
+    case 'movePhase': { const d=+b.dataset.d, j=s.p+d; [M.phases[s.p],M.phases[j]]=[M.phases[j],M.phases[s.p]];
+      M.phases.forEach(p=>nextBlank(p.steps.length?p.steps[p.steps.length-1].lines:p.body)); PROC.sel={p:j,s:null}; procCommit('Déplacé : phase '+phaseName(M.phases[j])); render(); return; }
+    case 'addStep': { const p=M.phases[s.p], at=b.dataset.at==='start'?0:s.s+1, prev=at?p.steps[at-1].lines:p.body; nextBlank(prev);
+      p.steps.splice(at,0,{title:'## Nouvelle étape',lines:['Type: action','']}); PROC.sel={p:s.p,s:at}; procCommit('Ajout : étape dans '+phaseName(p)); render(); return; }
+    case 'dupStep': { const p=M.phases[s.p], o=p.steps[s.s]; nextBlank(o.lines); p.steps.splice(s.s+1,0,{title:o.title+' (copie)',lines:[...o.lines]}); PROC.sel={p:s.p,s:s.s+1}; procCommit('Ajout : copie de '+stepName(o)); render(); return; }
+    case 'delStep': { const p=M.phases[s.p]; if(!confirm(`Supprimer l’étape « ${stepName(p.steps[s.s])} » ?`)) return; PROC.changes.push('Supprimé : '+stepName(p.steps[s.s]));
+      p.steps.splice(s.s,1); PROC.sel=p.steps.length?{p:s.p,s:Math.max(0,s.s-1)}:{p:s.p,s:null}; procCommit(); render(); return; }
+    case 'moveStep': { const p=M.phases[s.p], d=+b.dataset.d, j=s.s+d; [p.steps[s.s],p.steps[j]]=[p.steps[j],p.steps[s.s]]; p.steps.forEach(x=>nextBlank(x.lines)); PROC.sel={p:s.p,s:j}; procCommit('Déplacé : '+stepName(p.steps[j])); render(); return; }
+    case 'itemAdd': { const v=($('#peNewItem').value||'').trim(); if(!v) return; const bl=curBlock(); const it=getItems(bl.lines); it.push(v); setItems(bl.lines,it); procCommit('Modifié : '+bl.name); render(); $('#peNewItem')?.focus(); return; }
+    case 'itemDel': { const bl=curBlock(), it=getItems(bl.lines); it.splice(+b.dataset.k,1); setItems(bl.lines,it); procCommit('Modifié : '+bl.name); render(); return; }
+    case 'itemMove': { const bl=curBlock(), it=getItems(bl.lines), k=+b.dataset.k, j=k+(+b.dataset.d); [it[k],it[j]]=[it[j],it[k]]; setItems(bl.lines,it); procCommit('Modifié : '+bl.name); render(); return; }
+    case 'publish': return pePublishForm();
+    case 'doPublish': return pePublish();
+  }
+});
+window.__pe={mdText,mdModel,get PROC(){return PROC;}};   // accès pour les essais
+function bumpVersion(v){ const m=String(v||'0').match(/^(.*?)(\d+)$/); return m?m[1]+(+m[2]+1):(v||'0')+'.1'; }
+function pePublishForm(){
+  const o=$('#pePub'); const err=(PROC.parsed.warnings||[]).filter(w=>/illisible|inconnu|avant toute phase|Aucune étape|Fin < Début/i.test(w.msg));
+  if(!procTok()){ o.innerHTML='<div class="note bad">Pour publier, renseigner dans <b>Réglages</b> un jeton GitHub avec accès en écriture au dépôt <b>J3D-Procedures</b>.</div>'; return; }
+  if(err.length){ o.innerHTML=`<div class="note bad">Publication bloquée : ${err.length} erreur(s) de format à corriger (voir la liste ci-dessus).</div>`; return; }
+  const v=PROC.parsed.meta.version, nv=bumpVersion(v);
+  o.innerHTML=`<div class="note"><b>Publier la version ${esc(nv)}</b> (actuelle : ${esc(v||'?')}). Les nouveaux chantiers l’utiliseront ; les chantiers en cours gardent leur version.
+    <label class="f">Message (historique GitHub)</label><textarea class="f" id="peMsg" rows="3" style="width:100%;max-width:none">${esc(`Procédure v${nv} – `+(PROC.changes.slice(0,8).join(' ; ')||'mise à jour')+(PROC.changes.length>8?' ; …':''))}</textarea>
+    <div class="bar"><button class="btn pri" data-pe="doPublish">Confirmer la publication</button></div></div>`;
+}
+async function pePublish(){
+  const o=$('#pePub'), msg=($('#peMsg').value||'').trim()||'Mise à jour de la procédure';
+  o.innerHTML='<div class="note">Publication…</div>';
+  try{
+    const cur=await ghProc(`contents/${PROC_PATH}?ref=main&t=${Date.now()}`);
+    if(b64dec(cur.content)!==PROC.src){ o.innerHTML='<div class="note bad">La procédure a été modifiée en ligne depuis le chargement. Recharger, puis refaire les modifications (le brouillon reste disponible).</div>'; return; }
+    const today=new Date(), iso=`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`, nv=bumpVersion(PROC.parsed.meta.version);
+    let t=PROC.text.replace(/^(version:\s*).*$/m,`$1${nv}`).replace(/^(date:\s*).*$/m,`$1${iso}`);
+    const r=await ghProc(`contents/${PROC_PATH}`,{method:'PUT',body:JSON.stringify({message:msg,content:b64(t),sha:cur.sha,branch:'main'})});
+    LS.set('procDraft',null); PROC.src=t; PROC.text=t; PROC.sha=r.content?.sha; PROC.changes=[]; PROC.model=mdModel(t); procParse(); render();
+    toast(`Version ${nv} publiée – en ligne d’ici 1 à 2 minutes`,5000);
+  }catch(e){ o.innerHTML=`<div class="note bad">${esc(e.message)}</div>`; }
+}
+
 /* ---------- Événements ---------- */
 function readCfg(){ const v=id=>$(id)?.value?.trim();
-  if($('#cRepo')) Object.assign(CFG,{repo:v('#cRepo').replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,''),branch:v('#cBranch')||'main',dir:(v('#cDir')||'').replace(/^\/+|\/+$/g,'')||'chantiers',token:v('#cTok'),admin:v('#cAdm')});
+  if($('#cRepo')) Object.assign(CFG,{repo:v('#cRepo').replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,''),branch:v('#cBranch')||'main',dir:(v('#cDir')||'').replace(/^\/+|\/+$/g,'')||'chantiers',token:v('#cTok'),procToken:v('#cProcTok'),admin:v('#cAdm')});
   if($('#cDbxKey')) Object.assign(CFG,{dbxKey:v('#cDbxKey'),dbxDir:(v('#cDbxDir')||'').replace(/^\/+|\/+$/g,'')||'chantiers',useDbx:$('#cUseDbx').checked,useGh:$('#cUseGh').checked}); }
 async function collect(list){
   const pr=$('#prog'); let ok=0;
