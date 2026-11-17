@@ -703,6 +703,10 @@ function rPhaseForm(pi){
 function rStepForm(pi,si){
   const p=PROC.model.phases[pi], s=p.steps[si], L=s.lines, type=noAcc(getKey(L,'type'))||'action', T=TYPES[type]||'action', crit=noAcc(getKey(L,'criticite'));
   const items=getItems(L), imgs=getGroup(L,'image');
+  // autres étapes de type checklist : cibles possibles d'un transfert d'élément (même phase en premier)
+  const tgt=[]; PROC.model.phases.forEach((q,qi)=>q.steps.forEach((x,xi)=>{ if((qi!==pi||xi!==si)&&noAcc(getKey(x.lines,'type'))==='checklist') tgt.push({qi,xi,lbl:`${qi+1}. ${phaseName(q)} › ${stepName(x)}`,same:qi===pi}); }));
+  tgt.sort((a,b)=>b.same-a.same);
+  const xfer=tgt.map(t=>`<option value="${t.qi}:${t.xi}">→ ${esc(t.lbl)}</option>`).join('');
   const show=(t,html)=>t?html:'';
   return `<div class="card"><div class="bar" style="margin-top:0"><h2 style="flex:1">${esc(phaseName(p))} › étape ${si+1}</h2>
       <button class="btn" data-pe="moveStep" data-d="-1"${si?'':' disabled'}>↑</button><button class="btn" data-pe="moveStep" data-d="1"${si<p.steps.length-1?'':' disabled'}>↓</button>
@@ -723,7 +727,7 @@ function rStepForm(pi,si){
     ${area('Consigne (une ligne par paragraphe)','texts',getTexts(L).join('\n'),'',3)}
     ${area('Notes encadrées (une par ligne)','notes',getNotes(L).join('\n'),'',2)}
     ${T==='checklist'||items.length?`<label class="f">Cases à cocher (${items.length})</label><div id="peItems">${items.map((x,k)=>`<div class="bar" style="margin:3px 0"><input class="f" data-item="${k}" value="${esc(x)}" style="flex:1;max-width:none">
-        <button class="btn" data-pe="itemMove" data-k="${k}" data-d="-1"${k?'':' disabled'}>↑</button><button class="btn" data-pe="itemMove" data-k="${k}" data-d="1"${k<items.length-1?'':' disabled'}>↓</button><button class="btn" data-pe="itemDel" data-k="${k}">✕</button></div>`).join('')}</div>
+        <button class="btn" data-pe="itemMove" data-k="${k}" data-d="-1"${k?'':' disabled'}>↑</button><button class="btn" data-pe="itemMove" data-k="${k}" data-d="1"${k<items.length-1?'':' disabled'}>↓</button>${xfer?`<select class="f" data-itemxfer="${k}" title="Transférer vers une autre checklist" style="width:auto;max-width:180px;padding:6px"><option value="">⇄</option>${xfer}</select>`:''}<button class="btn" data-pe="itemDel" data-k="${k}">✕</button></div>`).join('')}</div>
       <div class="bar"><input class="f" id="peNewItem" placeholder="Nouvel élément (ex. Groupe électrogène 20 kVA)" style="flex:1;max-width:none"><button class="btn pri" data-pe="itemAdd">+ Ajouter</button></div>`:''}
     ${imgs.length?`<div class="small muted" style="margin-top:8px">Images : ${imgs.map(esc).join(' · ')} (modifiables en mode texte)</div>`:''}
     ${commentsOf(L)}</div>
@@ -764,6 +768,9 @@ document.addEventListener('input',e=>{
   if(t.dataset.item!=null){ if(!t.value.trim()) return; const b=curBlock(), it=getItems(b.lines); it[+t.dataset.item]=t.value.trim(); setItems(b.lines,it); procCommit('Modifié : '+b.name); rePrev(); }
 });
 document.addEventListener('change',e=>{ const t=e.target; if(t.dataset.pf&&t.tagName==='SELECT'){ peField(t.dataset.pf,t.value); render(); }
+  if(t.dataset.itemxfer!=null&&t.value){ const bl=curBlock(), it=getItems(bl.lines), k=+t.dataset.itemxfer, [qi,xi]=t.value.split(':').map(Number);
+    const dst=PROC.model.phases[qi].steps[xi], v=it.splice(k,1)[0]; setItems(bl.lines,it); const di=getItems(dst.lines); di.push(v); setItems(dst.lines,di);
+    procCommit(`Transféré : « ${v} » de ${bl.name} vers ${stepName(dst)}`); render(); toast(`« ${v} » transféré vers « ${stepName(dst)} »`,3500); return; }
   if(t.id==='peMoveTo'&&t.value!==''){ const s=PROC.sel, M=PROC.model, from=M.phases[s.p], to=M.phases[+t.value], st=from.steps.splice(s.s,1)[0];
     nextBlank(to.steps.length?to.steps[to.steps.length-1].lines:to.body); nextBlank(st.lines); to.steps.push(st);
     PROC.sel={p:+t.value,s:to.steps.length-1}; procCommit(`Déplacé : ${stepName(st)} vers ${phaseName(to)}`); render(); toast(`« ${stepName(st)} » déplacée en fin de « ${phaseName(to)} »`,3500); } });
